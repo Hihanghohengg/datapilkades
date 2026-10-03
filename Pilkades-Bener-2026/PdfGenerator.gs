@@ -2,12 +2,20 @@
  * PDF Generation using Google Docs Template
  */
 
-function generatePdfForKK(grupKK) {
+function generatePdfForKK(token, grupKK) {
   try {
     const templateId = getProperty("TEMPLATE_DOC_ID");
     if (!templateId) throw new Error("Template belum di-set. Hubungi Admin.");
     
-    const dbRes = getKeluargaByGrupKK(grupKK);
+    // verify token
+    if (!verifyWargaToken(token, grupKK)) {
+      // Also allow Admin to generate PDF?
+      if (!verifyAdminToken(token)) {
+        throw new Error("Akses ditolak");
+      }
+    }
+    
+    const dbRes = getKeluargaByGrupKK(token, grupKK); // Use token
     if (!dbRes.success || dbRes.data.length === 0) {
       throw new Error("Data KK tidak ditemukan.");
     }

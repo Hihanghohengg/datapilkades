@@ -78,7 +78,7 @@
       API.loginWarga(nama, formattedTgl).then(res => {
         UI.setLoading('btnLogin', false);
         if(res.success) {
-          UI.store('wargaAuth', { nama: res.nama, grupKK: res.grupKK });
+          UI.store('wargaAuth', { token: res.token, nama: res.nama, grupKK: res.grupKK });
           UI.navigate('konfirmasi');
         } else {
           UI.showError(res.message);

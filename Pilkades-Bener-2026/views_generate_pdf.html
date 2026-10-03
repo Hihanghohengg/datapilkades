@@ -38,8 +38,8 @@
       const g = document.getElementById('grupkk').value;
       if(!g) return;
       UI.setLoading('btnGen', true);
-      const token = UI.getStore('adminToken'); // although API doesn't verify token for PDF yet, standard practice
-      API.generatePDF(g).then(res => {
+      const token = UI.getStore('adminToken');
+      API.generatePDF(g, token).then(res => {
         UI.setLoading('btnGen', false);
         if(res.success) {
           document.getElementById('pdfResult').style.display = 'block';

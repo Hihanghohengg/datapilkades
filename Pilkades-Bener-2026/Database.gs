@@ -19,7 +19,9 @@ function getDatabase(sheetName) {
 /**
  * Ambil data KK berdasarkan GrupKK
  */
-function getKeluargaByGrupKK(grupKK) {
+function getKeluargaByGrupKK(token, grupKK) {
+  if (!verifyWargaToken(token, grupKK)) return { success: false, message: "Akses ditolak" };
+
   const db = getDatabase(CONFIG.SHEET_WARGA);
   const headers = db[0];
   const data = db.slice(1);
@@ -65,7 +67,9 @@ function setStatusKonfirmasi(grupKK, status) {
 /**
  * User submit Laporan "Sesuai"
  */
-function submitLaporanSesuai(grupKK, namaUser) {
+function submitLaporanSesuai(token, grupKK, namaUser) {
+  if (!verifyWargaToken(token, grupKK)) return { success: false, message: "Akses ditolak" };
+  
   setStatusKonfirmasi(grupKK, "Sesuai");
   insertLaporan(namaUser, "", grupKK, "Sesuai", "{}", "Selesai", "Auto-approve");
   return { success: true };
@@ -74,7 +78,9 @@ function submitLaporanSesuai(grupKK, namaUser) {
 /**
  * User submit Laporan Tambah/Kurang
  */
-function submitLaporanPerubahan(grupKK, namaUser, tglLahirUser, jenis, dataJson) {
+function submitLaporanPerubahan(token, grupKK, namaUser, tglLahirUser, jenis, dataJson) {
+  if (!verifyWargaToken(token, grupKK)) return { success: false, message: "Akses ditolak" };
+
   setStatusKonfirmasi(grupKK, "Menunggu Review");
   insertLaporan(namaUser, tglLahirUser, grupKK, jenis, dataJson, "Baru", "");
   return { success: true };

@@ -52,14 +52,46 @@ function loginWarga(nama, tglLahir) {
     }
     
     if (matchedUser) {
+      // Clear rate limit on successful login
+      clearRateLimit("WARGA", sName);
+      
+      const token = Utilities.getUuid();
+      const cache = CacheService.getScriptCache();
+      const sessionData = JSON.stringify({
+        grupKK: matchedUser.grupKK,
+        nama: matchedUser.nama
+      });
+      cache.put("WARGA_SESSION_" + token, sessionData, 3600); // 1 hour session
+      
       logAkses("warga", sName, "Login Sukses", matchedUser.grupKK);
-      return { success: true, grupKK: matchedUser.grupKK, nama: matchedUser.nama };
+      return { success: true, token: token, grupKK: matchedUser.grupKK, nama: matchedUser.nama };
     } else {
+      recordFailedLogin("WARGA", sName);
       logAkses("warga", sName, "Login Gagal", "-");
       return { success: false, message: "Data tidak ditemukan. Pastikan Nama dan Tanggal Lahir sesuai." };
     }
   } catch (e) {
     return { success: false, message: "Terjadi kesalahan sistem: " + e.message };
+  }
+}
+
+/**
+ * Verifies warga token and checks if it matches expected GrupKK
+ */
+function verifyWargaToken(token, expectedGrupKK) {
+  if (!token) return false;
+  const cache = CacheService.getScriptCache();
+  const sessionStr = cache.get("WARGA_SESSION_" + token);
+  if (!sessionStr) return false;
+  
+  try {
+    const session = JSON.parse(sessionStr);
+    if (expectedGrupKK && session.grupKK !== expectedGrupKK) {
+      return false; // RBAC check failed
+    }
+    return true;
+  } catch (e) {
+    return false;
   }
 }
 
@@ -80,9 +112,12 @@ function loginAdmin(password) {
       const cache = CacheService.getScriptCache();
       const sessionHours = parseInt(getProperty("ADMIN_SESSION_HOURS") || "2", 10);
       cache.put(CONFIG.ADMIN_SESSION_CACHE_PREFIX + token, "VALID", sessionHours * 3600);
+      
+      clearRateLimit("ADMIN", adminIp);
       logAkses("admin", "Admin", "Login Sukses", "-");
       return { success: true, token: token };
     } else {
+      recordFailedLogin("ADMIN", adminIp);
       logAkses("admin", "Admin", "Login Gagal", "-");
       return { success: false, message: "Password salah." };
     }
@@ -103,6 +138,7 @@ function verifyAdminToken(token) {
 
 /**
  * Rate Limiting Implementation using CacheService
+ * Checks if a user is currently locked out due to too many failed attempts
  */
 function checkRateLimit(role, identifier) {
   const cache = CacheService.getScriptCache();
@@ -110,18 +146,34 @@ function checkRateLimit(role, identifier) {
   let count = cache.get(key);
   
   let limit = role === "WARGA" ? CONFIG.MAX_REQ_WARGA : CONFIG.MAX_REQ_ADMIN;
+  
+  if (count && parseInt(count, 10) >= limit) {
+    return false; // Locked out
+  }
+  return true;
+}
+
+/**
+ * Record a failed login attempt to prevent brute force
+ */
+function recordFailedLogin(role, identifier) {
+  const cache = CacheService.getScriptCache();
+  const key = "RATE_LIMIT_" + role + "_" + identifier.replace(/\s+/g, '_');
+  let count = cache.get(key);
   let time = role === "WARGA" ? CONFIG.RATE_LIMIT_WARGA : CONFIG.RATE_LIMIT_ADMIN;
   
   if (!count) {
     cache.put(key, "1", time);
-    return true;
+  } else {
+    cache.put(key, (parseInt(count, 10) + 1).toString(), time);
   }
-  
-  count = parseInt(count, 10);
-  if (count >= limit) {
-    return false;
-  }
-  
-  cache.put(key, (count + 1).toString(), time);
-  return true;
+}
+
+/**
+ * Clear rate limit counters upon successful login
+ */
+function clearRateLimit(role, identifier) {
+  const cache = CacheService.getScriptCache();
+  const key = "RATE_LIMIT_" + role + "_" + identifier.replace(/\s+/g, '_');
+  cache.remove(key);
 }

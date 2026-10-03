@@ -13,10 +13,14 @@
     loginWarga: (nama, tgl) => API.call('loginWarga', nama, tgl),
     loginAdmin: (pass) => API.call('loginAdmin', pass),
     
-    // Warga
-    getKeluarga: (grupKK) => API.call('getKeluargaByGrupKK', grupKK),
-    submitSesuai: (grupKK, nama) => API.call('submitLaporanSesuai', grupKK, nama),
-    submitPerubahan: (grupKK, nama, tgl, jenis, data) => API.call('submitLaporanPerubahan', grupKK, nama, tgl, jenis, JSON.stringify(data)),
+    // Warga (auto-inject token)
+    _getWargaToken: () => {
+      try { return JSON.parse(sessionStorage.getItem('wargaAuth') || '{}').token; } 
+      catch(e) { return null; }
+    },
+    getKeluarga: (grupKK) => API.call('getKeluargaByGrupKK', API._getWargaToken(), grupKK),
+    submitSesuai: (grupKK, nama) => API.call('submitLaporanSesuai', API._getWargaToken(), grupKK, nama),
+    submitPerubahan: (grupKK, nama, tgl, jenis, data) => API.call('submitLaporanPerubahan', API._getWargaToken(), grupKK, nama, tgl, jenis, JSON.stringify(data)),
     
     // Admin
     getDashboardStats: (token) => API.call('getDashboardStats', token),
@@ -26,6 +30,6 @@
     approveLaporan: (token, id, jenis, data, grupKK) => API.call('approveLaporan', token, id, jenis, JSON.stringify(data), grupKK),
     tolakLaporan: (token, id, cat) => API.call('tolakLaporan', token, id, cat),
     updateWargaBatch: (token, updates) => API.call('updateWargaBatch', token, updates),
-    generatePDF: (grupKK) => API.call('generatePdfForKK', grupKK)
+    generatePDF: (grupKK, adminToken) => API.call('generatePdfForKK', adminToken || API._getWargaToken(), grupKK)
   };
 </script>
