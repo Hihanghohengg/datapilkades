@@ -23,9 +23,15 @@
       }
     },
     navigate: function(pageUrl) {
-      google.script.run.withSuccessHandler(function(url) {
-        top.location.href = url + "?page=" + pageUrl;
-      }).getScriptUrl();
+      let cachedUrl = sessionStorage.getItem('SCRIPT_URL');
+      if (cachedUrl) {
+        top.location.href = cachedUrl + "?page=" + pageUrl;
+      } else {
+        google.script.run.withSuccessHandler(function(url) {
+          sessionStorage.setItem('SCRIPT_URL', url);
+          top.location.href = url + "?page=" + pageUrl;
+        }).getScriptUrl();
+      }
     },
     store: function(key, val) { sessionStorage.setItem(key, JSON.stringify(val)); },
     getStore: function(key) { let v = sessionStorage.getItem(key); return v ? JSON.parse(v) : null; },

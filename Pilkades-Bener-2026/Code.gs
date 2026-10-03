@@ -26,6 +26,7 @@ function doGet(e) {
   
   // Pass configuration variables to template if needed
   template.config = CONFIG;
+  template.scriptUrl = getScriptUrl();
   
   return template.evaluate()
     .setTitle('Sistem Konfirmasi Pilkades Bener 2026')
