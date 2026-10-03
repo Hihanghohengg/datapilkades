@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('styles_main'); ?>
+</head>
+<body>
+  <div class="container">
+    <div class="header-logo">
+      <h2>TANDA BUKTI PENDATAAN PEMILIH</h2>
+      <p>PILKADES BENER 2026</p>
+    </div>
+    
+    <div class="card">
+      <div style="text-align:right; margin-bottom: 20px;">
+        <a href="#" onclick="UI.navigate('admin-login'); return false;" style="text-decoration:none; color:var(--muted); font-size:14px;">🔑 Login Admin</a>
+      </div>
+      
+      <h2 class="text-center mb-4">Login Warga</h2>
+      
+      <div id="errorAlert" class="alert alert-error"></div>
+      
+      <label>Nama Lengkap</label>
+      <input type="text" id="nama" placeholder="Masukkan nama sesuai KK" autocomplete="off">
+      
+      <label>Tanggal Lahir</label>
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <select id="tgl_dd">
+          <option value="">Tgl</option>
+          <!-- JS will populate -->
+        </select>
+        <select id="tgl_mm">
+          <option value="">Bulan</option>
+          <!-- JS will populate -->
+        </select>
+        <select id="tgl_yy">
+          <option value="">Tahun</option>
+          <!-- JS will populate -->
+        </select>
+      </div>
+      
+      <button class="btn btn-primary" id="btnLogin" onclick="doLogin()">CARI</button>
+      <p class="text-center mt-4 text-muted">Tidak bisa masuk? Hubungi Pantarlih/Admin.</p>
+    </div>
+  </div>
+
+  <?!= include('scripts_api_js'); ?>
+  <?!= include('scripts_ui_js'); ?>
+  <script>
+    // Populate dropdowns
+    const dd = document.getElementById('tgl_dd');
+    for(let i=1; i<=31; i++) dd.innerHTML += `<option value="${i<10?'0'+i:i}">${i}</option>`;
+    
+    const mm = document.getElementById('tgl_mm');
+    for(let i=1; i<=12; i++) mm.innerHTML += `<option value="${i<10?'0'+i:i}">${i}</option>`;
+    
+    const yy = document.getElementById('tgl_yy');
+    const currentYear = new Date().getFullYear();
+    for(let i=currentYear; i>=1920; i--) yy.innerHTML += `<option value="${i}">${i}</option>`;
+
+    function doLogin() {
+      const nama = document.getElementById('nama').value;
+      const d = dd.value;
+      const m = mm.value;
+      const y = yy.value;
+      
+      if(!nama || !d || !m || !y) {
+        UI.showError("Mohon lengkapi semua kolom");
+        return;
+      }
+      
+      UI.setLoading('btnLogin', true);
+      const tgl = `${d}-${m}-${y}`; // adjust based on db format if needed. Often dd-mm-yyyy or dd/mm/yyyy.
+      
+      // We'll format to match DD/MM/YYYY or similar if needed. DB uses 10-09-1969
+      const formattedTgl = `${d}-${m}-${y}`;
+      
+      API.loginWarga(nama, formattedTgl).then(res => {
+        UI.setLoading('btnLogin', false);
+        if(res.success) {
+          UI.store('wargaAuth', { nama: res.nama, grupKK: res.grupKK });
+          UI.navigate('konfirmasi');
+        } else {
+          UI.showError(res.message);
+        }
+      }).catch(e => {
+        UI.setLoading('btnLogin', false);
+        UI.showError("Terjadi kesalahan sistem.");
+      });
+    }
+  </script>
+</body>
+</html>

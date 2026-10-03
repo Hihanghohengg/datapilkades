@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('styles_main'); ?>
+  <?!= include('styles_admin'); ?>
+</head>
+<body class="admin-layout">
+  
+  <?!= include('partials_sidebar'); ?>
+  
+  <div class="main-content">
+    <div class="topbar">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <div>
+        <?!= include('partials_notif_icon'); ?>
+      </div>
+    </div>
+    
+    <div class="content-wrapper">
+      <h2 class="mb-4">Dashboard</h2>
+      
+      <div id="loading" class="text-center">Memuat data...</div>
+      
+      <div id="content" style="display:none;">
+        <div class="grid-2 mb-4">
+          <div class="card" style="margin:0;">
+            <div style="font-size:14px; color:var(--muted);">Total Warga</div>
+            <div style="font-size:32px; font-weight:700;" id="stTotal">0</div>
+          </div>
+          <div class="card" style="margin:0;">
+            <div style="font-size:14px; color:var(--success);">Sudah Sesuai</div>
+            <div style="font-size:32px; font-weight:700; color:var(--success);" id="stSudah">0</div>
+          </div>
+          <div class="card" style="margin:0;">
+            <div style="font-size:14px; color:var(--muted);">Belum Isi</div>
+            <div style="font-size:32px; font-weight:700;" id="stBelum">0</div>
+          </div>
+        </div>
+        
+        <h3 class="mb-2">Status Revisi</h3>
+        <div class="grid-2">
+          <div class="card" style="margin:0; border-left:4px solid var(--warning);">
+            <div style="font-size:14px;">Menunggu Review</div>
+            <div style="font-size:24px; font-weight:700;" id="stReview">0</div>
+          </div>
+          <div class="card" style="margin:0; border-left:4px solid var(--primary);">
+            <div style="font-size:14px;">Sudah Direvisi</div>
+            <div style="font-size:24px; font-weight:700;" id="stDirevisi">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <?!= include('scripts_api_js'); ?>
+  <?!= include('scripts_ui_js'); ?>
+  <?!= include('scripts_admin_js'); ?>
+  <script>
+    const token = UI.getStore('adminToken');
+    if(token) {
+      API.getDashboardStats(token).then(res => {
+        document.getElementById('loading').style.display = 'none';
+        if(res) {
+          document.getElementById('content').style.display = 'block';
+          document.getElementById('stTotal').textContent = res.total;
+          document.getElementById('stSudah').textContent = res.sudah;
+          document.getElementById('stBelum').textContent = res.belum;
+          document.getElementById('stReview').textContent = res.review;
+          document.getElementById('stDirevisi').textContent = res.direvisi;
+        }
+      });
+    }
+  </script>
+</body>
+</html>

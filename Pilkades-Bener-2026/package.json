@@ -1,0 +1,15 @@
+{
+  "name": "pilkades-bener-2026",
+  "version": "1.0.0",
+  "description": "Sistem telah dibuat sesuai PRD v8.0. Ikuti langkah berikut untuk mendeploy sistem ini.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@google/clasp": "^3.4.1"
+  }
+}

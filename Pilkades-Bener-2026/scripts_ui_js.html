@@ -1,0 +1,34 @@
+<script>
+  const UI = {
+    showError: function(msg) {
+      const el = document.getElementById('errorAlert');
+      if(el) { el.textContent = msg; el.style.display = 'block'; }
+      setTimeout(() => { if(el) el.style.display = 'none'; }, 5000);
+    },
+    showSuccess: function(msg) {
+      const el = document.getElementById('successAlert');
+      if(el) { el.textContent = msg; el.style.display = 'block'; }
+      setTimeout(() => { if(el) el.style.display = 'none'; }, 5000);
+    },
+    setLoading: function(btnId, isLoading) {
+      const btn = document.getElementById(btnId);
+      if(!btn) return;
+      if(isLoading) {
+        btn.dataset.originalText = btn.innerHTML;
+        btn.innerHTML = 'Memproses...';
+        btn.disabled = true;
+      } else {
+        btn.innerHTML = btn.dataset.originalText;
+        btn.disabled = false;
+      }
+    },
+    navigate: function(pageUrl) {
+      google.script.run.withSuccessHandler(function(url) {
+        top.location.href = url + "?page=" + pageUrl;
+      }).getScriptUrl();
+    },
+    store: function(key, val) { sessionStorage.setItem(key, JSON.stringify(val)); },
+    getStore: function(key) { let v = sessionStorage.getItem(key); return v ? JSON.parse(v) : null; },
+    clearStore: function() { sessionStorage.clear(); }
+  };
+</script>

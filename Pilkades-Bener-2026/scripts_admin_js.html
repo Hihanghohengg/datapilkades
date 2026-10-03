@@ -1,0 +1,36 @@
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (!document.body.classList.contains('admin-layout')) return;
+    
+    const token = UI.getStore('adminToken');
+    const path = new URLSearchParams(window.location.search).get('page');
+    
+    if (path !== 'admin-login' && !token) {
+      UI.navigate('admin-login');
+      return;
+    }
+    
+    // Sidebar toggle
+    const toggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    if (toggle && sidebar) {
+      toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+    }
+    
+    // Load Notif
+    if (token && path !== 'admin-login') {
+      API.getNotifCount(token).then(count => {
+        const badges = document.querySelectorAll('.notif-badge');
+        badges.forEach(b => {
+          b.textContent = count;
+          b.style.display = count > 0 ? 'inline-block' : 'none';
+        });
+      }).catch(e => console.error(e));
+    }
+  });
+  
+  function adminLogout() {
+    UI.clearStore();
+    UI.navigate('admin-login');
+  }
+</script>

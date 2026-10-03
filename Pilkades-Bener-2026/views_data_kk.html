@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('styles_main'); ?>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2 class="mb-4" id="titleKk">Data Keluarga</h2>
+      
+      <div id="listAnggota" style="margin-bottom: 24px;">
+        <!-- List inserted by JS -->
+      </div>
+      
+      <div class="text-center mb-4">
+        <p style="font-weight:600; font-size:18px;">Apakah data sudah sesuai?</p>
+      </div>
+      
+      <div id="errorAlert" class="alert alert-error"></div>
+      
+      <button class="btn btn-success mb-4" id="btnSesuai" onclick="submitSesuai()">SESUAI</button>
+      <button class="btn btn-danger" onclick="UI.navigate('pilih-perubahan')">BELUM SESUAI</button>
+    </div>
+  </div>
+
+  <?!= include('scripts_api_js'); ?>
+  <?!= include('scripts_ui_js'); ?>
+  <?!= include('scripts_app_js'); ?>
+  <script>
+    const auth = UI.getStore('wargaAuth');
+    const data = UI.getStore('wargaData');
+    
+    if(auth && data) {
+      document.getElementById('titleKk').textContent = "Data Keluarga " + (data[0].KepalaKeluarga || "");
+      
+      let html = "";
+      data.forEach((p, idx) => {
+        const ket = String(p.Keterangan||"").toLowerCase();
+        if(ket.includes("meninggal") || ket.includes("pindah") || ket.includes("dihapus")) return;
+        html += `
+          <div style="padding:12px; border-bottom:1px solid var(--border);">
+            <div style="font-weight:600;">${idx+1}. ${p.Nama} (${p.Umur} th)</div>
+            <div class="text-muted">✅ Pemilih - ${p.Status}</div>
+          </div>
+        `;
+      });
+      document.getElementById('listAnggota').innerHTML = html;
+    }
+    
+    function submitSesuai() {
+      UI.setLoading('btnSesuai', true);
+      API.submitSesuai(auth.grupKK, auth.nama).then(res => {
+        UI.setLoading('btnSesuai', false);
+        if(res.success) {
+          UI.store('statusLaporan', 'sesuai');
+          UI.navigate('sukses');
+        } else {
+          UI.showError(res.message);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

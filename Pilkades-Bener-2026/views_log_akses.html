@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('styles_main'); ?>
+  <?!= include('styles_admin'); ?>
+</head>
+<body class="admin-layout">
+  
+  <?!= include('partials_sidebar'); ?>
+  
+  <div class="main-content">
+    <div class="topbar">
+      <button class="menu-toggle" id="menuToggle">☰</button>
+      <div><?!= include('partials_notif_icon'); ?></div>
+    </div>
+    
+    <div class="content-wrapper">
+      <h2 class="mb-4">Log Akses</h2>
+      <div class="card">
+        <p class="text-muted">Untuk melihat history lengkap, buka tab Log_Akses di Google Sheets.</p>
+        <a href="#" onclick="alert('Silakan buka link Spreadsheet di browser Anda.')" class="btn btn-outline" style="max-width:200px;">Buka Spreadsheet</a>
+      </div>
+    </div>
+  </div>
+
+  <?!= include('scripts_ui_js'); ?>
+  <?!= include('scripts_admin_js'); ?>
+</body>
+</html>

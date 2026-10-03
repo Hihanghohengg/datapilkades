@@ -1,0 +1,17 @@
+**/node_modules/**
+**/node_modules
+node_modules/**
+node_modules
+package.json
+package-lock.json
+README.md
+data_warga_384.csv
+Format_Data_Penduduk_KK.xlsx
+*.xlsx
+*.csv
+*.log
+*.md
+.clasp.json
+.claspignore
+.git/**
+.gitignore
