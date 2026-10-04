@@ -6,7 +6,7 @@
     
     // Ensure Warga is logged in for protected pages
     const path = new URLSearchParams(window.location.search).get('page') || 'login';
-    const protectedPages = ['konfirmasi', 'data-kk', 'pilih-perubahan', 'form-tambah', 'form-kurang', 'sukses'];
+    const protectedPages = ['data-kk', 'pilih-perubahan', 'form-tambah', 'form-kurang', 'sukses'];
     
     if (protectedPages.includes(path) && !UI.getStore('wargaAuth')) {
       UI.navigate('login');

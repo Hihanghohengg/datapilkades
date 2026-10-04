@@ -32,12 +32,12 @@ function generatePdfForKK(token, grupKK) {
     const doc = DocumentApp.openById(copy.getId());
     const body = doc.getBody();
     
-    body.replaceText('{{KEPALA_KK}}', dbRes.kepala || "-");
-    body.replaceText('{{ALAMAT}}', dbRes.alamat || "-");
+    body.replaceText('\\{\\{KEPALA_KK\\}\\}', dbRes.kepala || "-");
+    body.replaceText('\\{\\{ALAMAT\\}\\}', dbRes.alamat || "-");
     
     // Replace placeholders for 11 slots
     for (let i = 1; i <= 11; i++) {
-      let textPlaceholder = `{{PEMILIH_${i}}}`;
+      let textPlaceholder = `\\{\\{PEMILIH_${i}\\}\\}`;
       if (i <= pemilihList.length) {
         let p = pemilihList[i - 1];
         let info = `${p.Nama} | ${p.TempatLahir}, ${p.TglLahir} | ${p.Umur} thn | ${p.JK} | ${p.Status}`;
@@ -52,10 +52,14 @@ function generatePdfForKK(token, grupKK) {
     const pdfBlob = copy.getAs('application/pdf');
     const pdfFile = DriveApp.createFile(pdfBlob);
     
+    // Set file agar bisa diakses/download publik (tanpa login Google)
+    pdfFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    
     // Hapus Docs temporary
     copy.setTrashed(true);
     
-    return { success: true, url: pdfFile.getUrl() };
+    // Kembalikan URL direct download dari Google Drive
+    return { success: true, url: 'https://drive.google.com/uc?export=download&id=' + pdfFile.getId() };
   } catch (e) {
     return { success: false, message: e.message };
   }

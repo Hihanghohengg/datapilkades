@@ -75,12 +75,28 @@
       // We'll format to match DD/MM/YYYY or similar if needed. DB uses 10-09-1969
       const formattedTgl = `${d}-${m}-${y}`;
       
+      if(!confirm("Apakah anda yakin data yang anda masukkan sudah benar?")) {
+        return;
+      }
+      
+      UI.setLoading('btnLogin', true);
+      
       API.loginWarga(nama, formattedTgl).then(res => {
-        UI.setLoading('btnLogin', false);
         if(res.success) {
           UI.store('wargaAuth', { token: res.token, nama: res.nama, grupKK: res.grupKK });
-          UI.navigate('konfirmasi');
+          
+          // Langsung tarik data keluarga, lewati halaman konfirmasi
+          API.getKeluarga(res.grupKK).then(resKeluarga => {
+            UI.setLoading('btnLogin', false);
+            if(resKeluarga.success) {
+              UI.store('wargaData', resKeluarga.data);
+              UI.navigate('data-kk');
+            } else {
+              UI.showError("Gagal memuat data keluarga");
+            }
+          });
         } else {
+          UI.setLoading('btnLogin', false);
           UI.showError(res.message);
         }
       }).catch(e => {
