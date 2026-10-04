@@ -21,7 +21,7 @@
       <div id="errorAlert" class="alert alert-error"></div>
       
       <label>Nama Lengkap</label>
-      <input type="text" id="nama" placeholder="Masukkan nama sesuai KK" autocomplete="off">
+      <input type="text" id="nama" placeholder="Masukkan Nama Lengkap Anda" autocomplete="off">
       
       <label>Tanggal Lahir</label>
       <div style="display:flex; gap:10px; margin-bottom:16px;">
@@ -52,7 +52,11 @@
     for(let i=1; i<=31; i++) dd.innerHTML += `<option value="${i<10?'0'+i:i}">${i}</option>`;
     
     const mm = document.getElementById('tgl_mm');
-    for(let i=1; i<=12; i++) mm.innerHTML += `<option value="${i<10?'0'+i:i}">${i}</option>`;
+    const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    namaBulan.forEach((b, idx) => {
+      let val = idx + 1;
+      mm.innerHTML += `<option value="${val < 10 ? '0' + val : val}">${b}</option>`;
+    });
     
     const yy = document.getElementById('tgl_yy');
     const currentYear = new Date().getFullYear();
@@ -69,10 +73,6 @@
         return;
       }
       
-      UI.setLoading('btnLogin', true);
-      const tgl = `${d}-${m}-${y}`; // adjust based on db format if needed. Often dd-mm-yyyy or dd/mm/yyyy.
-      
-      // We'll format to match DD/MM/YYYY or similar if needed. DB uses 10-09-1969
       const formattedTgl = `${d}-${m}-${y}`;
       
       if(!confirm("Apakah anda yakin data yang anda masukkan sudah benar?")) {
