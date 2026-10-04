@@ -23,29 +23,52 @@
       }
     },
     navigate: function(pageUrl) {
-      const go = (url) => {
-        const fullUrl = url + "?page=" + pageUrl;
-        window.open(fullUrl, "_top"); // Attempt top navigation first (works if sync)
-        setTimeout(() => {
-          // Fallback for async navigation block (navigates the iframe itself)
-          window.location.href = fullUrl; 
-        }, 100);
-      };
-      
       let cachedUrl = sessionStorage.getItem('SCRIPT_URL');
-      if (cachedUrl) {
-        go(cachedUrl);
-      } else {
+      if (!cachedUrl) {
         google.script.run
           .withSuccessHandler(function(url) {
             sessionStorage.setItem('SCRIPT_URL', url);
-            go(url);
-          })
-          .withFailureHandler(function(err) {
-            UI.showError("Koneksi gagal. Silakan coba lagi.");
+            UI.navigate(pageUrl);
           })
           .getScriptUrl();
+        return;
       }
+      
+      const fullUrl = cachedUrl + "?page=" + pageUrl;
+      
+      // Attempt top navigation. If user-gesture is intact, this works immediately.
+      try {
+        top.location.href = fullUrl;
+      } catch(e) {}
+      
+      // If navigation was blocked due to async sandbox rules, the page won't unload.
+      // We show a graceful fallback overlay after 300ms.
+      setTimeout(() => {
+        let existing = document.getElementById('navOverlay');
+        if(existing) return;
+        
+        const overlay = document.createElement('div');
+        overlay.id = 'navOverlay';
+        overlay.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:var(--bg); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;";
+        overlay.innerHTML = `
+          <div style="font-size: 64px; margin-bottom: 20px;">✅</div>
+          <h2 style="margin-bottom:15px; color:var(--text);">Proses Berhasil</h2>
+          <p style="margin-bottom:30px; text-align:center; color:var(--muted); max-width:400px;">
+            Karena alasan keamanan browser, navigasi otomatis dicegah. Silakan klik tombol di bawah untuk melanjutkan ke halaman berikutnya.
+          </p>
+          <a href="${fullUrl}" target="_top" class="btn btn-primary" style="padding:15px 30px; font-size:16px; text-decoration:none; box-shadow: 0 4px 12px rgba(37,99,235,0.3);">Lanjutkan Sekarang ➔</a>
+        `;
+        document.body.appendChild(overlay);
+        
+        // Reset any loading buttons
+        const btns = document.querySelectorAll('button');
+        btns.forEach(btn => {
+          if(btn.disabled && btn.dataset.originalText) {
+            btn.innerHTML = btn.dataset.originalText;
+            btn.disabled = false;
+          }
+        });
+      }, 300);
     },
     store: function(key, val) { sessionStorage.setItem(key, JSON.stringify(val)); },
     getStore: function(key) { let v = sessionStorage.getItem(key); return v ? JSON.parse(v) : null; },
