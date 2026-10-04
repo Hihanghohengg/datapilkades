@@ -27,41 +27,37 @@
       <div id="loading" class="text-center">Memuat data...</div>
       
       <div id="content" style="display:none;">
-        <div class="grid-2 mb-4">
-          <div class="card clickable-card" style="margin:0;" onclick="showDetail('Semua')">
-            <div style="font-size:14px; color:var(--muted);">Total Warga</div>
+        <div class="grid-2 mb-4" style="grid-template-columns: repeat(3, 1fr);">
+          <div class="card" style="margin:0; text-align:center;">
+            <div style="font-size:14px; color:var(--muted);">Total KK</div>
             <div style="font-size:32px; font-weight:700;" id="stTotal">0</div>
           </div>
-          <div class="card clickable-card" style="margin:0;" onclick="showDetail('Sesuai')">
-            <div style="font-size:14px; color:var(--success);">Sudah Sesuai</div>
+          <div class="card" style="margin:0; text-align:center;">
+            <div style="font-size:14px; color:var(--success);">Sesuai</div>
             <div style="font-size:32px; font-weight:700; color:var(--success);" id="stSudah">0</div>
           </div>
-          <div class="card clickable-card" style="margin:0;" onclick="showDetail('Belum')">
-            <div style="font-size:14px; color:var(--muted);">Belum Isi</div>
-            <div style="font-size:32px; font-weight:700;" id="stBelum">0</div>
+          <div class="card" style="margin:0; text-align:center;">
+            <div style="font-size:14px; color:var(--danger);">Belum</div>
+            <div style="font-size:32px; font-weight:700; color:var(--danger);" id="stBelum">0</div>
           </div>
         </div>
         
-        <h3 class="mb-2">Status Revisi</h3>
-        <div class="grid-2">
-          <div class="card clickable-card" style="margin:0; border-left:4px solid var(--warning);" onclick="showDetail('Menunggu Review')">
+        <div class="grid-2 mb-4" style="grid-template-columns: repeat(2, 1fr);">
+          <div class="card" style="margin:0; text-align:center; border-left:4px solid var(--warning);">
             <div style="font-size:14px;">Menunggu Review</div>
             <div style="font-size:24px; font-weight:700;" id="stReview">0</div>
           </div>
-          <div class="card clickable-card" style="margin:0; border-left:4px solid var(--primary);" onclick="showDetail('Sudah Direvisi')">
+          <div class="card" style="margin:0; text-align:center; border-left:4px solid var(--primary);">
             <div style="font-size:14px;">Sudah Direvisi</div>
             <div style="font-size:24px; font-weight:700;" id="stDirevisi">0</div>
           </div>
         </div>
 
-        <div id="detailArea" style="display:none; margin-top:24px;">
-          <h3 class="mb-2" id="detailTitle">Detail Data</h3>
-          <div class="table-wrapper">
-            <table id="tblDetail">
-              <thead><tr><th>No</th><th>Grup KK</th><th>Nama</th><th>Status</th></tr></thead>
-              <tbody></tbody>
-            </table>
-          </div>
+        <div style="display:flex; flex-direction:column; gap:12px; margin-top:32px;">
+          <button class="btn btn-primary" style="justify-content:flex-start;" onclick="UI.navigate('monitoring')">📋 Monitoring KK</button>
+          <button class="btn btn-primary" style="justify-content:flex-start;" onclick="UI.navigate('laporan')">🔍 Laporan Masuk</button>
+          <button class="btn btn-outline" style="justify-content:flex-start;" onclick="UI.navigate('404')">📄 Generate PDF</button>
+          <button class="btn btn-outline" style="justify-content:flex-start;" onclick="UI.navigate('404')">📜 Log Akses</button>
         </div>
       </div>
     </div>
@@ -79,42 +75,14 @@
         document.getElementById('loading').style.display = 'none';
         if(res) {
           document.getElementById('content').style.display = 'block';
-          document.getElementById('stTotal').textContent = res.total;
-          document.getElementById('stSudah').textContent = res.sudah;
+          document.getElementById('stTotal').textContent = res.totalKK;
+          document.getElementById('stSudah').textContent = res.sesuai;
           document.getElementById('stBelum').textContent = res.belum;
-          document.getElementById('stReview').textContent = res.review;
-          document.getElementById('stDirevisi').textContent = res.direvisi;
+          document.getElementById('stReview').textContent = res.menungguReview;
+          document.getElementById('stDirevisi').textContent = res.sudahDirevisi;
           wargaList = res.list || [];
         }
       });
-    }
-
-    function showDetail(status) {
-      document.getElementById('detailArea').style.display = 'block';
-      document.getElementById('detailTitle').textContent = "Data Warga: " + status;
-      
-      const tbody = document.querySelector('#tblDetail tbody');
-      tbody.innerHTML = '';
-      
-      let filtered = status === 'Semua' ? wargaList : wargaList.filter(x => x.Status === status);
-      
-      if(filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Tidak ada data</td></tr>';
-        return;
-      }
-      
-      let html = '';
-      filtered.forEach((w, idx) => {
-        html += `
-          <tr>
-            <td>${idx + 1}</td>
-            <td>${w.GrupKK}</td>
-            <td>${w.Nama}</td>
-            <td><span class="badge" style="background:var(--bg); color:var(--text);">${w.Status}</span></td>
-          </tr>
-        `;
-      });
-      tbody.innerHTML = html;
     }
   </script>
 </body>

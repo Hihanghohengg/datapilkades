@@ -82,7 +82,7 @@
       UI.setLoading('btnSubmit', true);
       const auth = UI.getStore('wargaAuth');
       
-      API.submitPerubahan(auth.grupKK, auth.nama, "-", "Kurang Orang", payload).then(res => {
+      API.submitPerubahan(auth.userGrupKK, auth.userNama, "-", "Kurang Orang", payload).then(res => {
         UI.setLoading('btnSubmit', false);
         if(res.success) {
           UI.store('statusLaporan', 'perubahan');

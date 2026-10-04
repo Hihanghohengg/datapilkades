@@ -24,6 +24,9 @@ function loginWarga(nama, tglLahir) {
     const idxNama = headers.indexOf("Nama");
     const idxTgl = headers.indexOf("TglLahir");
     const idxGrupKK = headers.indexOf("GrupKK");
+    const idxAlamat = headers.indexOf("Alamat");
+    const idxRT = headers.indexOf("RT");
+    const idxRW = headers.indexOf("RW");
     
     if (idxNama === -1 || idxTgl === -1) throw new Error("Kolom DB tidak valid");
     
@@ -53,7 +56,10 @@ function loginWarga(nama, tglLahir) {
           maxSimilarity = sim;
           matchedUser = {
             nama: dbNama,
-            grupKK: row[idxGrupKK]
+            grupKK: row[idxGrupKK],
+            alamat: row[idxAlamat] || "",
+            rt: row[idxRT] || "",
+            rw: row[idxRW] || ""
           };
         }
       }
@@ -66,12 +72,23 @@ function loginWarga(nama, tglLahir) {
       const cache = CacheService.getScriptCache();
       const sessionData = JSON.stringify({
         grupKK: matchedUser.grupKK,
-        nama: matchedUser.nama
+        nama: matchedUser.nama,
+        alamat: matchedUser.alamat,
+        rt: matchedUser.rt,
+        rw: matchedUser.rw
       });
       cache.put("WARGA_SESSION_" + token, sessionData, 3600); // 1 hour session
       
       logAkses("warga", sName, "Login Sukses", matchedUser.grupKK);
-      return { success: true, token: token, grupKK: matchedUser.grupKK, nama: matchedUser.nama };
+      return { 
+        success: true, 
+        token: token, 
+        grupKK: matchedUser.grupKK, 
+        nama: matchedUser.nama,
+        alamat: matchedUser.alamat,
+        rt: matchedUser.rt,
+        rw: matchedUser.rw
+      };
     } else {
       recordFailedLogin("WARGA", sName);
       logAkses("warga", sName, "Login Gagal", "-");

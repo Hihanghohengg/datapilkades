@@ -38,7 +38,10 @@
       <div class="layout-laporan">
         <!-- Kiri: List Laporan -->
         <div class="col-list">
-          <div class="list-header">Daftar Laporan</div>
+          <div class="list-header" style="display:flex; gap:10px; padding: 10px 16px;">
+            <button class="btn btn-outline" style="flex:1; padding:6px; min-height:0; border:none; background:var(--surface);" id="tabBaru" onclick="switchLapTab('baru')">Baru Masuk</button>
+            <button class="btn btn-outline" style="flex:1; padding:6px; min-height:0; border:none; background:transparent;" id="tabRiwayat" onclick="switchLapTab('riwayat')">Riwayat</button>
+          </div>
           <div class="list-body" id="lapList">
             <div class="text-center text-muted" style="margin-top:20px;">Memuat...</div>
           </div>
@@ -108,8 +111,18 @@
     let activeLap = null;
     let dataKkCurrent = [];
     let dbUpdates = []; // { action: 'update'|'delete', rowIndex: X, data: {} }
+    let lapTab = 'baru';
     
     if(token) loadLaporan();
+    
+    function switchLapTab(tab) {
+      lapTab = tab;
+      document.getElementById('tabBaru').style.background = tab === 'baru' ? 'var(--surface)' : 'transparent';
+      document.getElementById('tabBaru').style.fontWeight = tab === 'baru' ? '600' : '400';
+      document.getElementById('tabRiwayat').style.background = tab === 'riwayat' ? 'var(--surface)' : 'transparent';
+      document.getElementById('tabRiwayat').style.fontWeight = tab === 'riwayat' ? '600' : '400';
+      renderList();
+    }
     
     function loadLaporan() {
       API.getLaporanList(token).then(res => {
@@ -122,13 +135,19 @@
     
     function renderList() {
       const container = document.getElementById('lapList');
-      if(allLaporan.length === 0) {
+      
+      let filtered = allLaporan.filter(lap => {
+        if (lapTab === 'baru') return lap.Status === 'Baru' || lap.Status === 'Dibaca';
+        else return lap.Status === 'Selesai' || lap.Status === 'Ditolak';
+      });
+      
+      if(filtered.length === 0) {
         container.innerHTML = '<div class="text-center text-muted" style="margin-top:20px;">Belum ada laporan.</div>';
         return;
       }
       
       let html = '';
-      allLaporan.forEach(lap => {
+      filtered.forEach(lap => {
         let cls = lap.Status === 'Baru' ? 'baru' : (lap.Status === 'Dibaca' ? 'dibaca' : '');
         let bg = activeLap && activeLap.Id === lap.Id ? 'active' : '';
         html += `

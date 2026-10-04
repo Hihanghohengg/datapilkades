@@ -6,14 +6,67 @@
 </head>
 <body>
   <div class="container">
-    <div class="card">
+    
+    <!-- STEP 1: SEARCH PAGE -->
+    <div class="card" id="stepSearch">
       <div style="margin-bottom: 16px;">
         <a href="#" onclick="UI.navigate('pilih-perubahan'); return false;" style="text-decoration:none; color:var(--primary); font-weight:600;">← Kembali</a>
       </div>
       <h2 class="mb-2">Tambah Anggota Keluarga</h2>
-      <p class="text-muted mb-4">ℹ️ Laporan akan ditinjau admin sebelum masuk ke database.</p>
+      <p class="text-muted mb-4">Cari nama anggota keluarga Anda di database kami.</p>
       
-      <div id="errorAlert" class="alert alert-error"></div>
+      <div id="searchAlert" class="alert alert-error"></div>
+      
+      <label>Nama Lengkap</label>
+      <input type="text" id="inpCariNama" placeholder="Masukkan nama..." autocomplete="off">
+      
+      <button class="btn btn-primary mt-4" id="btnCari" onclick="doSearch()">CARI</button>
+    </div>
+
+    <!-- STEP 2: MULTIPLE MATCHES (KASUS B) -->
+    <div class="card" id="stepMultiMatch" style="display:none;">
+      <h2 class="mb-2">Pilih Orang</h2>
+      <p class="text-muted mb-4">Ditemukan beberapa orang dengan nama mirip. Pilih salah satu:</p>
+      <div id="multiMatchList" style="margin-bottom: 16px;"></div>
+      <button class="btn btn-primary" id="btnPilihMatch" onclick="confirmSelection()">KONFIRMASI PILIHAN</button>
+      <button class="btn btn-outline mt-2" onclick="resetToSearch()">BATAL</button>
+    </div>
+
+    <!-- STEP 3: VISUAL CONFIRMATION (KASUS A) -->
+    <div class="card" id="stepConfirm" style="display:none;">
+      <h2 class="mb-2">Konfirmasi Data</h2>
+      <p class="text-muted mb-4">Apakah ini orang yang Anda maksud?</p>
+      
+      <div style="background:var(--bg); padding:16px; border-radius:12px; border:1px solid var(--border); margin-bottom:20px;">
+        <h3 id="confNama" style="color:var(--primary); margin-bottom:4px;"></h3>
+        <div id="confUmur" style="color:var(--muted); font-size:14px; margin-bottom:4px;"></div>
+        <div id="confAlamat" style="color:var(--neutral); font-weight:500;"></div>
+      </div>
+      
+      <div class="grid-2" style="gap:10px;">
+        <button class="btn btn-success" id="btnBenar" onclick="submitTambahOrang()">✓ BENAR</button>
+        <button class="btn btn-danger" onclick="resetToSearch()">✗ BUKAN</button>
+      </div>
+    </div>
+    
+    <!-- STEP 4: NO MATCH (KASUS C) -->
+    <div class="card" id="stepNoMatch" style="display:none;">
+      <h2 class="mb-2 text-center">Data Tidak Ditemukan</h2>
+      <p class="text-muted mb-4 text-center">Nama tersebut tidak ditemukan di database warga.</p>
+      
+      <button class="btn btn-outline mb-2" onclick="resetToSearch()">COBA LAGI PENCARIAN</button>
+      <button class="btn btn-primary" onclick="showFormWargaBaru()">LAPOR WARGA BARU</button>
+    </div>
+
+    <!-- STEP 5: FORM WARGA BARU (BAGIAN E) -->
+    <div class="card" id="stepFormBaru" style="display:none;">
+      <div style="margin-bottom: 16px;">
+        <a href="#" onclick="resetToSearch(); return false;" style="text-decoration:none; color:var(--primary); font-weight:600;">← Kembali Pencarian</a>
+      </div>
+      <h2 class="mb-2">Lapor Warga Baru</h2>
+      <p class="text-muted mb-4">ℹ️ Laporan akan ditinjau admin.</p>
+      
+      <div id="formAlert" class="alert alert-error"></div>
       
       <label>Nama Lengkap *</label>
       <input type="text" id="inpNama" autocomplete="off">
@@ -31,8 +84,8 @@
       <label>Tempat Lahir *</label>
       <input type="text" id="inpTempat" autocomplete="off">
       
-      <label>Tanggal Lahir * <span class="text-muted" style="font-weight:normal">(Umur otomatis dihitung)</span></label>
-      <div style="display:flex; gap:10px; margin-bottom:16px;">
+      <label>Tanggal Lahir *</label>
+      <div style="display:flex; gap:10px; margin-bottom:20px;">
         <select id="tgl_dd"><option value="">Tgl</option></select>
         <select id="tgl_mm"><option value="">Bulan</option></select>
         <select id="tgl_yy"><option value="">Tahun</option></select>
@@ -52,16 +105,32 @@
         <option value="">Pilih...</option>
         <option value="KEPALA KELUARGA">KEPALA KELUARGA</option>
         <option value="ISTRI">ISTRI</option>
+        <option value="SUAMI">SUAMI</option>
         <option value="ANAK">ANAK</option>
+        <option value="MENANTU">MENANTU</option>
+        <option value="CUCU">CUCU</option>
+        <option value="ORANG TUA">ORANG TUA</option>
+        <option value="FAMILI LAIN">FAMILI LAIN</option>
         <option value="LAINNYA">LAINNYA</option>
       </select>
       
-      <label>Alamat *</label>
-      <input type="text" id="inpAlamat" autocomplete="off">
+      <label>Alamat * (Otomatis dari KK Anda)</label>
+      <input type="text" id="inpAlamat" readonly style="background:#f1f5f9; color:#64748b;">
       
-      <label>Disabilitas (opsional)</label>
+      <div style="display:flex; gap:10px;">
+        <div style="flex:1;">
+          <label>RT *</label>
+          <input type="text" id="inpRT" readonly style="background:#f1f5f9; color:#64748b;">
+        </div>
+        <div style="flex:1;">
+          <label>RW *</label>
+          <input type="text" id="inpRW" readonly style="background:#f1f5f9; color:#64748b;">
+        </div>
+      </div>
+      
+      <label>Disabilitas</label>
       <select id="inpDis">
-        <option value="">TIDAK ADA</option>
+        <option value="TIDAK">TIDAK</option>
         <option value="FISIK">FISIK</option>
         <option value="NETRA">NETRA</option>
         <option value="RUNGU/WICARA">RUNGU/WICARA</option>
@@ -72,33 +141,146 @@
       <label>Keterangan (opsional)</label>
       <input type="text" id="inpKet" autocomplete="off">
       
-      <button class="btn btn-primary mt-4" id="btnSubmit" onclick="kirimLaporan()">KIRIM LAPORAN</button>
+      <button class="btn btn-primary mt-4" id="btnSubmitBaru" onclick="kirimWargaBaru()">KIRIM LAPORAN</button>
     </div>
+    
   </div>
 
   <?!= include('scripts_api_js'); ?>
   <?!= include('scripts_ui_js'); ?>
-  <?!= include('scripts_app_js'); ?>
   <script>
     if (!UI.getStore('wargaAuth')) {
       UI.navigate('login');
     }
+    const auth = UI.getStore('wargaAuth');
+    const dataKk = UI.getStore('wargaData') || [];
     
-    // Populate dropdowns
+    // Store selected match
+    let selectedMatch = null;
+    let currentMatches = [];
+
+    // Init Date dropdowns
     const dd = document.getElementById('tgl_dd');
     for(let i=1; i<=31; i++) dd.innerHTML += `<option value="${i<10?'0'+i:i}">${i}</option>`;
     const mm = document.getElementById('tgl_mm');
     for(let i=1; i<=12; i++) mm.innerHTML += `<option value="${i<10?'0'+i:i}">${i}</option>`;
     const yy = document.getElementById('tgl_yy');
     for(let i=new Date().getFullYear(); i>=1920; i--) yy.innerHTML += `<option value="${i}">${i}</option>`;
-    
-    // Auto fill alamat if possible
-    const dataKk = UI.getStore('wargaData');
-    if(dataKk && dataKk.length > 0) {
-      document.getElementById('inpAlamat').value = dataKk[0].Alamat || "";
+
+    function hideAll() {
+      ['stepSearch', 'stepMultiMatch', 'stepConfirm', 'stepNoMatch', 'stepFormBaru'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
     }
 
-    function kirimLaporan() {
+    function resetToSearch() {
+      hideAll();
+      document.getElementById('stepSearch').style.display = 'block';
+      document.getElementById('inpCariNama').value = '';
+      selectedMatch = null;
+    }
+
+    function doSearch() {
+      const nama = document.getElementById('inpCariNama').value;
+      if (!nama) return;
+      
+      UI.setLoading('btnCari', true);
+      
+      // Call Apps Script
+      google.script.run
+        .withSuccessHandler(res => {
+          UI.setLoading('btnCari', false);
+          if(!res.success) {
+            UI.showError(res.message);
+            return;
+          }
+          
+          currentMatches = res.data;
+          
+          if(currentMatches.length === 0) {
+            // KASUS C
+            hideAll();
+            document.getElementById('stepNoMatch').style.display = 'block';
+          } else if(currentMatches.length === 1) {
+            // KASUS A
+            selectedMatch = currentMatches[0];
+            showConfirm(selectedMatch);
+          } else {
+            // KASUS B
+            hideAll();
+            const listDiv = document.getElementById('multiMatchList');
+            listDiv.innerHTML = '';
+            currentMatches.forEach((m, idx) => {
+              listDiv.innerHTML += `
+                <div style="padding:12px; border:1px solid var(--border); border-radius:8px; margin-bottom:8px; display:flex; align-items:center; gap:12px; cursor:pointer;" onclick="document.getElementById('radio_${idx}').checked = true">
+                  <input type="radio" name="matchRadio" id="radio_${idx}" value="${idx}">
+                  <div>
+                    <div style="font-weight:600; color:var(--neutral)">${m.Nama}</div>
+                    <div style="font-size:12px; color:var(--muted)">Umur: ${m.Umur} thn | RT ${m.RT} RW ${m.RW}</div>
+                  </div>
+                </div>
+              `;
+            });
+            document.getElementById('stepMultiMatch').style.display = 'block';
+          }
+        })
+        .withFailureHandler(err => {
+          UI.setLoading('btnCari', false);
+          UI.showError("Gagal mencari data.");
+        })
+        .cariAnggotaKK(nama, auth.userAlamat, auth.userRT, auth.userRW, auth.userGrupKK);
+    }
+    
+    function confirmSelection() {
+      const radios = document.getElementsByName('matchRadio');
+      let idx = -1;
+      for (let i = 0; i < radios.length; i++) {
+        if (radios[i].checked) idx = i;
+      }
+      if (idx === -1) {
+        alert("Pilih salah satu!");
+        return;
+      }
+      selectedMatch = currentMatches[idx];
+      showConfirm(selectedMatch);
+    }
+    
+    function showConfirm(match) {
+      hideAll();
+      document.getElementById('confNama').innerText = match.Nama;
+      document.getElementById('confUmur').innerText = match.Umur ? `${match.Umur} Tahun` : (match.TglLahir || "-");
+      document.getElementById('confAlamat').innerText = `${match.Alamat} RT ${match.RT} RW ${match.RW}`;
+      document.getElementById('stepConfirm').style.display = 'block';
+    }
+
+    function submitTambahOrang() {
+      UI.setLoading('btnBenar', true);
+      const payload = {
+        Nama: selectedMatch.Nama,
+        KepalaKeluarga: dataKk[0]?.KepalaKeluarga || auth.userNama
+      };
+      
+      API.submitPerubahan(auth.userGrupKK, auth.userNama, "-", "Tambah Orang", payload).then(res => {
+        UI.setLoading('btnBenar', false);
+        if(res.success) {
+          UI.store('statusLaporan', 'perubahan');
+          UI.navigate('sukses');
+        } else {
+          alert(res.message);
+          resetToSearch();
+        }
+      });
+    }
+    
+    function showFormWargaBaru() {
+      hideAll();
+      document.getElementById('inpAlamat').value = auth.userAlamat;
+      document.getElementById('inpRT').value = auth.userRT;
+      document.getElementById('inpRW').value = auth.userRW;
+      document.getElementById('stepFormBaru').style.display = 'block';
+    }
+
+    function kirimWargaBaru() {
       const payload = {
         Nama: document.getElementById('inpNama').value,
         NIK: document.getElementById('inpNIK').value,
@@ -107,28 +289,30 @@
         TglLahir: `${dd.value}-${mm.value}-${yy.value}`,
         Status: document.getElementById('inpStatus').value,
         Hubungan: document.getElementById('inpHub').value,
-        Alamat: document.getElementById('inpAlamat').value,
+        Alamat: auth.userAlamat,
+        RT: auth.userRT,
+        RW: auth.userRW,
         Disabilitas: document.getElementById('inpDis').value,
         Keterangan: document.getElementById('inpKet').value
       };
       
-      if(!payload.Nama || !payload.JK || !payload.TempatLahir || !dd.value || !mm.value || !yy.value || !payload.Status || !payload.Hubungan || !payload.Alamat) {
-        UI.showError("Lengkapi semua kolom wajib (*)");
+      if(!payload.Nama || !payload.JK || !payload.TempatLahir || !dd.value || !mm.value || !yy.value || !payload.Status || !payload.Hubungan) {
+        document.getElementById('formAlert').innerText = "Lengkapi semua kolom wajib (*)";
+        document.getElementById('formAlert').style.display = 'block';
         return;
       }
       
-      UI.setLoading('btnSubmit', true);
-      const auth = UI.getStore('wargaAuth');
-      payload.KepalaKeluarga = dataKk[0].KepalaKeluarga || auth.nama;
+      UI.setLoading('btnSubmitBaru', true);
+      payload.KepalaKeluarga = dataKk[0]?.KepalaKeluarga || auth.userNama;
       
-      // We don't have user's DOB in auth, but it doesn't strictly matter for the Laporan row, just pass "-"
-      API.submitPerubahan(auth.grupKK, auth.nama, "-", "Tambah Orang", payload).then(res => {
-        UI.setLoading('btnSubmit', false);
+      API.submitPerubahan(auth.userGrupKK, auth.userNama, "-", "Tambah Warga Baru", payload).then(res => {
+        UI.setLoading('btnSubmitBaru', false);
         if(res.success) {
           UI.store('statusLaporan', 'perubahan');
           UI.navigate('sukses');
         } else {
-          UI.showError(res.message);
+          document.getElementById('formAlert').innerText = res.message;
+          document.getElementById('formAlert').style.display = 'block';
         }
       });
     }

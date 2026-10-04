@@ -42,10 +42,10 @@
     function downloadPdf() {
       UI.setLoading('btnPdf', true);
       const auth = UI.getStore('wargaAuth');
-      API.generatePDF(auth.grupKK).then(res => {
+      API.generatePDF(auth.userGrupKK).then(res => {
         UI.setLoading('btnPdf', false);
         if(res.success) {
-          document.getElementById('btnPdf').outerHTML = `<a href="${res.url}" target="_blank" class="btn btn-success">⬇️ KLIK DI SINI UNTUK MENGUNDUH PDF</a>`;
+          document.getElementById('btnPdf').outerHTML = `<a href="${res.url}" target="_top" class="btn btn-success">⬇️ KLIK DI SINI UNTUK MENGUNDUH PDF</a>`;
         } else {
           alert("Gagal generate PDF: " + res.message);
         }

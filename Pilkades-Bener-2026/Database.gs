@@ -17,6 +17,64 @@ function getDatabase(sheetName) {
 }
 
 /**
+ * Cari anggota KK di database berdasarkan filter
+ */
+function cariAnggotaKK(nama, userAlamat, userRT, userRW, userGrupKK) {
+  const db = getDatabase(CONFIG.SHEET_WARGA);
+  if (!db || db.length === 0) return { success: false, message: "DB Error" };
+  
+  const headers = db[0];
+  const data = db.slice(1);
+  
+  const idxNama = headers.indexOf("Nama");
+  const idxAlamat = headers.indexOf("Alamat");
+  const idxRT = headers.indexOf("RT");
+  const idxRW = headers.indexOf("RW");
+  const idxGrupKK = headers.indexOf("GrupKK");
+  const idxTgl = headers.indexOf("TglLahir");
+  const idxUmur = headers.indexOf("Umur");
+  
+  if (idxNama === -1 || idxAlamat === -1) return { success: false, message: "Kolom DB tidak valid" };
+  
+  let matches = [];
+  const sName = Utils.sanitize(nama);
+  
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const dbNama = String(row[idxNama] || "").trim();
+    const dbAlamat = String(row[idxAlamat] || "").trim();
+    const dbRT = String(row[idxRT] || "").trim();
+    const dbRW = String(row[idxRW] || "").trim();
+    const dbGrupKK = String(row[idxGrupKK] || "").trim();
+    
+    // Syarat 2: Alamat + RT + RW harus sama
+    if (dbAlamat.toLowerCase() !== userAlamat.toLowerCase()) continue;
+    if (dbRT !== userRT) continue;
+    if (dbRW !== userRW) continue;
+    
+    // Syarat 3: GrupKK KOSONG
+    if (dbGrupKK && dbGrupKK !== "") continue;
+    
+    // Syarat 1: Nama match fuzzy
+    const sim = Utils.similarity(sName, dbNama);
+    if (sim >= 0.8) {
+      matches.push({
+        Nama: dbNama,
+        Umur: row[idxUmur] || "",
+        TglLahir: row[idxTgl] || "",
+        Alamat: dbAlamat,
+        RT: dbRT,
+        RW: dbRW,
+        RawRowData: row, // Pass raw row for Tambah Orang
+        RowIndex: i + 2
+      });
+    }
+  }
+  
+  return { success: true, data: matches };
+}
+
+/**
  * Ambil data KK berdasarkan GrupKK
  */
 function getKeluargaByGrupKK(token, grupKK) {
@@ -94,6 +152,13 @@ function submitLaporanPerubahan(token, grupKK, namaUser, tglLahirUser, jenis, da
 }
 
 /**
+ * Wrapper: Simpan Laporan Tambah Warga Baru
+ */
+function simpanLaporanTambahWargaBaru(token, grupKK, namaUser, dataJson) {
+  return submitLaporanPerubahan(token, grupKK, namaUser, "-", "Tambah Warga Baru", dataJson);
+}
+
+/**
  * Insert baris ke tab Laporan
  */
 function insertLaporan(nama, tglLahir, grupKK, jenis, dataStr, status, catatan) {
@@ -156,6 +221,16 @@ function getLaporanList(token) {
 }
 
 /**
+ * Admin: Ambil laporan berdasarkan status
+ */
+function getLaporanByStatus(token, status) {
+  let res = getLaporanList(token);
+  if (!res.success) return res;
+  let filtered = res.data.filter(lap => lap.Status === status);
+  return { success: true, data: filtered };
+}
+
+/**
  * Admin: Get Notif Count (Laporan Baru)
  */
 function getNotifCount(token) {
@@ -182,7 +257,28 @@ function markLaporanAsRead(token, rowIdx) {
 }
 
 /**
- * Admin: Approve Laporan
+ * Admin: Approve Laporan Warga Baru (Wrapper)
+ */
+function approveLaporanWargaBaru(token, rowIdx, dataJsonStr, grupKK) {
+  return approveLaporan(token, rowIdx, "Tambah Warga Baru", dataJsonStr, grupKK);
+}
+
+/**
+ * Admin: Approve Laporan Tambah Orang (Wrapper)
+ */
+function approveLaporanTambahOrang(token, rowIdx, dataJsonStr, grupKK) {
+  return approveLaporan(token, rowIdx, "Tambah Orang", dataJsonStr, grupKK);
+}
+
+/**
+ * Admin: Approve Laporan Kurang Orang (Wrapper)
+ */
+function approveLaporanKurangOrang(token, rowIdx, dataJsonStr, grupKK) {
+  return approveLaporan(token, rowIdx, "Kurang Orang", dataJsonStr, grupKK);
+}
+
+/**
+ * Admin: Approve Laporan (Internal Core)
  */
 function approveLaporan(token, rowIdx, jenis, dataJsonStr, grupKK) {
   if (!verifyAdminToken(token)) return { success: false, message: "Unauthorized" };
@@ -194,7 +290,7 @@ function approveLaporan(token, rowIdx, jenis, dataJsonStr, grupKK) {
   const dataObj = JSON.parse(dataJsonStr);
   
   try {
-    if (jenis === "Tambah Orang") {
+    if (jenis === "Tambah Warga Baru") {
       let newRow = new Array(wargaHeaders.length).fill("");
       const allWarga = getDatabase(CONFIG.SHEET_WARGA);
       const noCol = wargaHeaders.indexOf("No");
@@ -219,17 +315,35 @@ function approveLaporan(token, rowIdx, jenis, dataJsonStr, grupKK) {
       mapCol("TglLahir", dataObj.TglLahir);
       mapCol("Umur", Utils.computeAge(dataObj.TglLahir));
       mapCol("Status", dataObj.Status);
+      mapCol("HubunganKeluarga", dataObj.Hubungan || "");
       mapCol("Alamat", dataObj.Alamat);
       mapCol("RT", dataObj.RT || "");
       mapCol("RW", dataObj.RW || "");
       mapCol("Disabilitas", dataObj.Disabilitas || "");
       mapCol("Keterangan", dataObj.Keterangan || "");
       mapCol("NoHP", "");
-      mapCol("NoTPS", CONFIG.NO_TPS);
+      mapCol("NoTPS", CONFIG.NO_TPS || "06");
       mapCol("StatusKonfirmasi", "Sudah Direvisi");
       
       sheetWarga.appendRow(newRow);
       
+    } else if (jenis === "Tambah Orang") {
+      // Tambah Orang dari Database existing (GrupKK kosong)
+      const allWarga = getDatabase(CONFIG.SHEET_WARGA);
+      const idxNama = wargaHeaders.indexOf("Nama");
+      const idxGrupKK = wargaHeaders.indexOf("GrupKK");
+      
+      let foundRow = -1;
+      for (let i = 1; i < allWarga.length; i++) {
+        if (allWarga[i][idxNama] === dataObj.Nama && !allWarga[i][idxGrupKK]) {
+          foundRow = i + 1;
+          break;
+        }
+      }
+      
+      if (foundRow > -1) {
+        sheetWarga.getRange(foundRow, idxGrupKK + 1).setValue(grupKK);
+      }
     } else if (jenis === "Kurang Orang") {
       const allWarga = getDatabase(CONFIG.SHEET_WARGA);
       const idxGrupKK = wargaHeaders.indexOf("GrupKK");
@@ -239,7 +353,7 @@ function approveLaporan(token, rowIdx, jenis, dataJsonStr, grupKK) {
       let foundRow = -1;
       for (let i = 1; i < allWarga.length; i++) {
         if (allWarga[i][idxGrupKK] === grupKK && allWarga[i][idxNama] === dataObj.Nama) {
-          foundRow = i + 1; // 1 for header, 1 for 1-based index
+          foundRow = i + 1; 
           break;
         }
       }
@@ -311,7 +425,7 @@ function updateWargaBatch(token, dataUpdates) {
 }
 
 /**
- * Get Dashboard Stats
+ * Get Dashboard Stats (Real-time from KK perspective)
  */
 function getDashboardStats(token) {
   if (!verifyAdminToken(token)) return null;
@@ -321,35 +435,56 @@ function getDashboardStats(token) {
   const idxStatus = headers.indexOf("StatusKonfirmasi");
   const idxGrupKK = headers.indexOf("GrupKK");
   const idxNama = headers.indexOf("Nama");
+  const idxHub = headers.indexOf("HubunganKeluarga");
   
-  let totalData = warga.length;
+  let kkMap = {}; // groupBy GrupKK
+  
+  warga.forEach(row => {
+    let gkk = row[idxGrupKK];
+    if (gkk) {
+      if (!kkMap[gkk]) {
+        kkMap[gkk] = {
+          GrupKK: gkk,
+          NamaKepala: "",
+          Status: "Belum",
+          JumlahPemilih: 0
+        };
+      }
+      kkMap[gkk].JumlahPemilih++;
+      
+      let stat = row[idxStatus];
+      if (stat === "Sesuai" || stat === "Sudah Direvisi" || stat === "Menunggu Review") {
+        // If any member has this status, assume the KK has this status
+        kkMap[gkk].Status = stat;
+      }
+      
+      let hub = String(row[idxHub] || "").toLowerCase();
+      if (hub.includes("kepala")) {
+        kkMap[gkk].NamaKepala = row[idxNama];
+      } else if (!kkMap[gkk].NamaKepala) {
+        kkMap[gkk].NamaKepala = row[idxNama]; // fallback
+      }
+    }
+  });
+  
   let sudah = 0;
   let belum = 0;
   let review = 0;
   let direvisi = 0;
   
-  let listSemua = [];
-  
-  warga.forEach(row => {
-    let stat = row[idxStatus];
-    if (stat === "Sesuai") sudah++;
-    else if (stat === "Belum") belum++;
-    else if (stat === "Menunggu Review") review++;
-    else if (stat === "Sudah Direvisi") direvisi++;
-    
-    listSemua.push({
-      GrupKK: row[idxGrupKK],
-      Nama: row[idxNama],
-      Status: stat
-    });
+  Object.values(kkMap).forEach(kk => {
+    if (kk.Status === "Sesuai") sudah++;
+    else if (kk.Status === "Belum") belum++;
+    else if (kk.Status === "Menunggu Review") review++;
+    else if (kk.Status === "Sudah Direvisi") direvisi++;
   });
   
   return {
-    total: totalData,
-    sudah: sudah,
+    totalKK: Object.keys(kkMap).length,
+    sesuai: sudah,
     belum: belum,
-    review: review,
-    direvisi: direvisi,
-    list: listSemua
+    menungguReview: review,
+    sudahDirevisi: direvisi,
+    list: Object.values(kkMap)
   };
 }

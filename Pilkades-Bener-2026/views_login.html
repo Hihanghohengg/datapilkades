@@ -39,7 +39,7 @@
         </select>
       </div>
       
-      <button class="btn btn-primary" id="btnLogin" onclick="doLogin()">CARI</button>
+      <button class="btn btn-primary" id="btnLogin" onclick="doLogin()">MASUK</button>
       <p class="text-center mt-4 text-muted">Tidak bisa masuk? Hubungi Pantarlih/Admin.</p>
     </div>
   </div>
@@ -91,7 +91,14 @@
         if(!res.success) {
           throw new Error(res.message);
         }
-        UI.store('wargaAuth', { token: res.token, nama: res.nama, grupKK: res.grupKK });
+        UI.store('wargaAuth', { 
+          token: res.token, 
+          userNama: res.nama, 
+          userGrupKK: res.grupKK,
+          userAlamat: res.alamat,
+          userRT: res.rt,
+          userRW: res.rw
+        });
         return API.getKeluarga(res.grupKK);
       }).then(resKeluarga => {
         UI.setLoading('btnLogin', false);
