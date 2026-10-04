@@ -26,13 +26,18 @@
   <?!= include('scripts_ui_js'); ?>
   <?!= include('scripts_app_js'); ?>
   <script>
-    const stat = UI.getStore('statusLaporan');
-    if(stat === 'sesuai') {
-      document.getElementById('msgSukses').innerHTML = "Data keluarga Anda sudah sesuai.<br>Silakan download form PDF di bawah ini.";
-      document.getElementById('pdfArea').style.display = 'block';
+    if (!UI.getStore('wargaAuth')) {
+      UI.navigate('login');
     } else {
-      document.getElementById('msgSukses').innerHTML = "Laporan perubahan Anda sudah dikirim.<br>Admin akan meninjau segera.";
+      const stat = UI.getStore('statusLaporan');
+      if(stat === 'sesuai') {
+        document.getElementById('msgSukses').innerHTML = "Data keluarga Anda sudah sesuai.<br>Silakan download form PDF di bawah ini.";
+        document.getElementById('pdfArea').style.display = 'block';
+      } else {
+        document.getElementById('msgSukses').innerHTML = "Laporan perubahan Anda sudah dikirim.<br>Admin akan meninjau segera.";
+      }
     }
+
     
     function downloadPdf() {
       UI.setLoading('btnPdf', true);
@@ -40,7 +45,7 @@
       API.generatePDF(auth.grupKK).then(res => {
         UI.setLoading('btnPdf', false);
         if(res.success) {
-          window.open(res.url, '_blank');
+          document.getElementById('btnPdf').outerHTML = `<a href="${res.url}" target="_blank" class="btn btn-success">⬇️ KLIK DI SINI UNTUK MENGUNDUH PDF</a>`;
         } else {
           alert("Gagal generate PDF: " + res.message);
         }

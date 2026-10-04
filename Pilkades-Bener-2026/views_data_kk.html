@@ -41,8 +41,10 @@
     const auth = UI.getStore('wargaAuth');
     const data = UI.getStore('wargaData');
     
-    if(auth && data) {
-      document.getElementById('titleKk').textContent = "Data Keluarga " + (data[0].KepalaKeluarga || "");
+    if(!auth || !data) {
+      UI.navigate('login');
+    } else {
+      document.getElementById('titleKk').textContent = "Data Keluarga " + (data[0] ? data[0].KepalaKeluarga || "" : "");
       
       let html = "";
       data.forEach((p, idx) => {

@@ -27,5 +27,10 @@
 
   <?!= include('scripts_ui_js'); ?>
   <?!= include('scripts_app_js'); ?>
+  <script>
+    if (!UI.getStore('wargaAuth')) {
+      UI.navigate('login');
+    }
+  </script>
 </body>
 </html>

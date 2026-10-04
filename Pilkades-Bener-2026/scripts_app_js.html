@@ -1,15 +1,3 @@
 <script>
-  // Global Warga App Logic
-  document.addEventListener("DOMContentLoaded", () => {
-    // Only run if not admin layout
-    if (document.body.classList.contains('admin-layout')) return;
-    
-    // Ensure Warga is logged in for protected pages
-    const path = new URLSearchParams(window.location.search).get('page') || 'login';
-    const protectedPages = ['data-kk', 'pilih-perubahan', 'form-tambah', 'form-kurang', 'sukses'];
-    
-    if (protectedPages.includes(path) && !UI.getStore('wargaAuth')) {
-      UI.navigate('login');
-    }
-  });
+  // Auth logic is now explicitly handled inside each view to prevent iframe issues.
 </script>

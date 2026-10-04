@@ -44,6 +44,9 @@
   <?!= include('scripts_ui_js'); ?>
   <?!= include('scripts_app_js'); ?>
   <script>
+    if (!UI.getStore('wargaAuth')) {
+      UI.navigate('login');
+    }
     const dataKk = UI.getStore('wargaData');
     if(dataKk) {
       const sel = document.getElementById('inpNama');

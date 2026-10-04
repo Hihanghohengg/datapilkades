@@ -35,7 +35,14 @@ function getKeluargaByGrupKK(token, grupKK) {
     if (row[idxGrupKK] === grupKK) {
       let obj = {};
       headers.forEach((h, i) => {
-        obj[h] = row[i];
+        let val = row[i];
+        if (h === "TglLahir" && val instanceof Date) {
+          let d = val.getDate();
+          let m = val.getMonth() + 1;
+          let y = val.getFullYear();
+          val = (d < 10 ? '0'+d : d) + '-' + (m < 10 ? '0'+m : m) + '-' + y;
+        }
+        obj[h] = val;
       });
       obj.RowIndex = index + 2; // +1 for header, +1 for 0-index
       result.push(obj);
