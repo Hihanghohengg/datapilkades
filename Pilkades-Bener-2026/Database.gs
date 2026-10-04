@@ -159,6 +159,13 @@ function simpanLaporanTambahWargaBaru(token, grupKK, namaUser, dataJson) {
 }
 
 /**
+ * Wrapper: Simpan Laporan Perbaiki Data
+ */
+function submitLaporanPerbaikanData(token, grupKK, namaUser, dataJsonStr) {
+  return submitLaporanPerubahan(token, grupKK, namaUser, "-", "Perbaiki Data", dataJsonStr);
+}
+
+/**
  * Insert baris ke tab Laporan
  */
 function insertLaporan(nama, tglLahir, grupKK, jenis, dataStr, status, catatan) {
@@ -384,6 +391,40 @@ function approveLaporan(token, rowIdx, jenis, dataJsonStr, grupKK) {
       
       if (foundRow > -1) {
         sheetWarga.getRange(foundRow, idxKet + 1).setValue(dataObj.Alasan);
+      }
+    } else if (jenis === "Perbaiki Data") {
+      const allWarga = getDatabase(CONFIG.SHEET_WARGA);
+      const idxGrupKK = wargaHeaders.indexOf("GrupKK");
+      const idxNama = wargaHeaders.indexOf("Nama");
+      
+      let foundRow = -1;
+      // Gunakan OriginalNama untuk mencari baris yang tepat
+      for (let i = 1; i < allWarga.length; i++) {
+        if (allWarga[i][idxGrupKK] === dataObj.OriginalGrupKK && allWarga[i][idxNama] === dataObj.OriginalNama) {
+          foundRow = i + 1;
+          break;
+        }
+      }
+      
+      if (foundRow > -1) {
+        const updateField = (header, val) => {
+          let idx = wargaHeaders.indexOf(header);
+          if (idx > -1) sheetWarga.getRange(foundRow, idx + 1).setValue(val);
+        };
+        
+        updateField("Nama", dataObj.Nama);
+        updateField("NIK", dataObj.NIK);
+        updateField("JK", dataObj.JK);
+        updateField("TempatLahir", dataObj.TempatLahir);
+        updateField("TglLahir", dataObj.TglLahir);
+        updateField("Umur", Utils.computeAge(dataObj.TglLahir));
+        updateField("Status", dataObj.Status);
+        updateField("Disabilitas", dataObj.Disabilitas);
+        
+        let oldKet = allWarga[foundRow - 1][wargaHeaders.indexOf("Keterangan")] || "";
+        let newKet = oldKet ? oldKet + " | Perbaikan Data" : "Perbaikan Data";
+        if(dataObj.Keterangan) newKet += ": " + dataObj.Keterangan;
+        updateField("Keterangan", newKet);
       }
     }
     

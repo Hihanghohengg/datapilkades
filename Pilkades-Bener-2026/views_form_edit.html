@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <?!= include('styles_main'); ?>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- STEP 1: PILIH ANGGOTA -->
+    <div class="card" id="stepSelect">
+      <div style="margin-bottom: 16px;">
+        <a href="<?= scriptUrl ?>?page=pilih-perubahan" target="_top" style="text-decoration:none; color:var(--primary); font-weight:600;">← Kembali</a>
+      </div>
+      <h2 class="mb-2">Perbaiki Data Anggota</h2>
+      <p class="text-muted mb-4">Pilih anggota keluarga yang datanya ingin diperbaiki.</p>
+      
+      <div id="loadingAnggota" class="text-center text-muted">Memuat daftar anggota keluarga...</div>
+      
+      <div id="listAnggota" style="display:none; display:flex; flex-direction:column; gap:10px;">
+        <!-- Anggota list populated here -->
+      </div>
+    </div>
+    
+    <!-- STEP 2: FORM EDIT -->
+    <div class="card" id="stepEdit" style="display:none;">
+      <div style="margin-bottom: 16px;">
+        <a href="#" onclick="showStep('select'); return false;" style="text-decoration:none; color:var(--primary); font-weight:600;">← Batal Edit</a>
+      </div>
+      
+      <h3 class="mb-4">Ubah Data: <span id="lblNamaEdit" style="color:var(--primary);"></span></h3>
+      
+      <div id="errorAlert" class="alert alert-error"></div>
+      
+      <form id="formEdit" onsubmit="submitEdit(event)">
+        <!-- Hidden field to store Original Data -->
+        <input type="hidden" id="inpOriginalData">
+        
+        <label>Nama Lengkap</label>
+        <input type="text" id="inpNama" required>
+        
+        <label>NIK</label>
+        <input type="text" id="inpNIK">
+        
+        <label>Jenis Kelamin</label>
+        <select id="inpJK" required>
+          <option value="">Pilih...</option>
+          <option value="LAKI-LAKI">LAKI-LAKI</option>
+          <option value="PEREMPUAN">PEREMPUAN</option>
+        </select>
+        
+        <div class="grid-2">
+          <div>
+            <label>Tempat Lahir</label>
+            <input type="text" id="inpTempatLahir" required>
+          </div>
+          <div>
+            <label>Tanggal Lahir</label>
+            <input type="text" id="inpTglLahir" placeholder="DD/MM/YYYY" required>
+          </div>
+        </div>
+        
+        <label>Status Perkawinan</label>
+        <select id="inpStatusKawin" required>
+          <option value="">Pilih...</option>
+          <option value="BELUM KAWIN">BELUM KAWIN</option>
+          <option value="KAWIN">KAWIN</option>
+          <option value="CERAI HIDUP">CERAI HIDUP</option>
+          <option value="CERAI MATI">CERAI MATI</option>
+        </select>
+        
+        <label>Disabilitas (Kosongkan jika tidak ada)</label>
+        <input type="text" id="inpDisabilitas">
+        
+        <label>Keterangan Tambahan</label>
+        <input type="text" id="inpKeterangan" placeholder="Alasan perubahan atau catatan lainnya">
+        
+        <button type="submit" class="btn btn-primary" id="btnSubmit">KIRIM LAPORAN PERBAIKAN</button>
+      </form>
+    </div>
+    
+  </div>
+
+  <?!= include('scripts_api_js'); ?>
+  <?!= include('scripts_ui_js'); ?>
+  <?!= include('scripts_app_js'); ?>
+  
+  <script>
+    const auth = UI.getStore('wargaAuth');
+    if (!auth) UI.navigate('login');
+    
+    let keluargaData = [];
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      API.call('getKeluargaByGrupKK', API._getWargaToken(), auth.userGrupKK).then(res => {
+        document.getElementById('loadingAnggota').style.display = 'none';
+        if(res.success) {
+          keluargaData = res.data;
+          renderList(res.data);
+        } else {
+          UI.showError(res.message);
+        }
+      });
+    });
+    
+    function renderList(list) {
+      const container = document.getElementById('listAnggota');
+      container.innerHTML = '';
+      container.style.display = 'flex';
+      
+      list.forEach((p, index) => {
+        const div = document.createElement('div');
+        div.style.cssText = "padding:12px; border:1px solid var(--border); border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center;";
+        div.onmouseover = () => div.style.borderColor = 'var(--primary)';
+        div.onmouseout = () => div.style.borderColor = 'var(--border)';
+        div.onclick = () => openEdit(index);
+        
+        div.innerHTML = `
+          <div>
+            <div style="font-weight:600;">${p.Nama || '-'}</div>
+            <div style="font-size:12px; color:var(--muted);">${p.TglLahir || '-'}</div>
+          </div>
+          <div>✏️ Pilih</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+    
+    function showStep(step) {
+      document.getElementById('stepSelect').style.display = step === 'select' ? 'block' : 'none';
+      document.getElementById('stepEdit').style.display = step === 'edit' ? 'block' : 'none';
+    }
+    
+    function openEdit(index) {
+      const p = keluargaData[index];
+      document.getElementById('lblNamaEdit').textContent = p.Nama;
+      
+      // Simpan data asli untuk referensi admin (misalnya untuk tahu nama aslinya apa jika diubah)
+      document.getElementById('inpOriginalData').value = JSON.stringify(p);
+      
+      // Auto fill
+      document.getElementById('inpNama').value = p.Nama || "";
+      document.getElementById('inpNIK').value = p.NIK || "";
+      document.getElementById('inpJK').value = p.JK || "";
+      document.getElementById('inpTempatLahir').value = p.TempatLahir || "";
+      document.getElementById('inpTglLahir').value = p.TglLahir || "";
+      document.getElementById('inpStatusKawin').value = p.Status || "";
+      document.getElementById('inpDisabilitas').value = p.Disabilitas || "";
+      document.getElementById('inpKeterangan').value = ""; // Dikosongkan agar user ngisi alasan
+      
+      showStep('edit');
+    }
+    
+    function submitEdit(e) {
+      e.preventDefault();
+      UI.setLoading('btnSubmit', true);
+      
+      const originalData = JSON.parse(document.getElementById('inpOriginalData').value);
+      
+      const payload = {
+        OriginalNama: originalData.Nama, // penting buat admin cari barisnya
+        OriginalGrupKK: originalData.GrupKK,
+        Nama: document.getElementById('inpNama').value,
+        NIK: document.getElementById('inpNIK').value,
+        JK: document.getElementById('inpJK').value,
+        TempatLahir: document.getElementById('inpTempatLahir').value,
+        TglLahir: document.getElementById('inpTglLahir').value,
+        Status: document.getElementById('inpStatusKawin').value,
+        Disabilitas: document.getElementById('inpDisabilitas').value,
+        Keterangan: document.getElementById('inpKeterangan').value,
+        JenisPerubahan: "Perbaiki Data"
+      };
+      
+      API.submitLaporanPerbaikanData(
+        API._getWargaToken(), 
+        auth.userGrupKK, 
+        auth.userNama, 
+        JSON.stringify(payload)
+      ).then(res => {
+        UI.setLoading('btnSubmit', false);
+        if(res.success) {
+          UI.navigate('sukses');
+        } else {
+          UI.showError(res.message);
+        }
+      }).catch(err => {
+        UI.setLoading('btnSubmit', false);
+        UI.showError("Gagal mengirim laporan.");
+      });
+    }
+  </script>
+</body>
+</html>

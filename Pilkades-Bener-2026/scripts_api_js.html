@@ -21,6 +21,7 @@
     getKeluarga: (grupKK) => API.call('getKeluargaByGrupKK', API._getWargaToken(), grupKK),
     submitSesuai: (grupKK, nama) => API.call('submitLaporanSesuai', API._getWargaToken(), grupKK, nama),
     submitPerubahan: (grupKK, nama, tgl, jenis, data) => API.call('submitLaporanPerubahan', API._getWargaToken(), grupKK, nama, tgl, jenis, JSON.stringify(data)),
+    submitLaporanPerbaikanData: (token, grupKK, namaUser, dataJsonStr) => API.call('submitLaporanPerbaikanData', token, grupKK, namaUser, dataJsonStr),
     
     // Admin
     getDashboardStats: (token) => API.call('getDashboardStats', token),

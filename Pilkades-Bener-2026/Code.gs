@@ -10,7 +10,7 @@ function doGet(e) {
   const page = e.parameter.page || 'login';
   const allowedPages = [
     'login', 'admin-login', 'data-kk', 'pilih-perubahan',
-    'form-tambah', 'form-kurang', 'sukses', 'dashboard',
+    'form-tambah', 'form-kurang', 'form-edit', 'sukses', 'dashboard',
     'laporan', 'monitoring', 'generate-pdf', 'log-akses', '404'
   ];
   
