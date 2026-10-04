@@ -23,14 +23,23 @@
       }
     },
     navigate: function(pageUrl) {
+      const go = (url) => {
+        const fullUrl = url + "?page=" + pageUrl;
+        const a = document.createElement('a');
+        a.href = fullUrl;
+        a.target = '_top';
+        document.body.appendChild(a);
+        a.click();
+      };
+      
       let cachedUrl = sessionStorage.getItem('SCRIPT_URL');
       if (cachedUrl) {
-        top.location.href = cachedUrl + "?page=" + pageUrl;
+        go(cachedUrl);
       } else {
         google.script.run
           .withSuccessHandler(function(url) {
             sessionStorage.setItem('SCRIPT_URL', url);
-            top.location.href = url + "?page=" + pageUrl;
+            go(url);
           })
           .withFailureHandler(function(err) {
             UI.showError("Koneksi gagal. Silakan coba lagi.");
