@@ -33,7 +33,17 @@ function loginWarga(nama, tglLahir) {
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const dbNama = String(row[idxNama] || "").trim();
-      const dbTgl = String(row[idxTgl] || "").trim();
+      
+      let rawTgl = row[idxTgl];
+      let dbTgl = "";
+      if (rawTgl instanceof Date) {
+        let d = rawTgl.getDate();
+        let m = rawTgl.getMonth() + 1;
+        let y = rawTgl.getFullYear();
+        dbTgl = (d < 10 ? '0' + d : d) + '-' + (m < 10 ? '0' + m : m) + '-' + y;
+      } else {
+        dbTgl = String(rawTgl || "").trim();
+      }
       
       const sim = Utils.similarity(sName, dbNama);
       
@@ -110,7 +120,6 @@ function loginAdmin(password) {
       logAkses("admin", "Admin", "Login Sukses", "-");
       return { success: true, token: token };
     } else {
-      recordFailedLogin("ADMIN", adminIp);
       logAkses("admin", "Admin", "Login Gagal", "-");
       return { success: false, message: "Password salah." };
     }
