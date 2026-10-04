@@ -10,9 +10,7 @@
  */
 function loginWarga(nama, tglLahir) {
   try {
-    if (!checkRateLimit("WARGA", nama)) {
-      return { success: false, message: "Terlalu banyak percobaan. Coba lagi nanti." };
-    }
+    // Rate limit dinonaktifkan sesuai permintaan agar tidak strict
     
     const sName = Utils.sanitize(nama);
     const sTglLahir = Utils.sanitize(tglLahir);
@@ -52,8 +50,7 @@ function loginWarga(nama, tglLahir) {
     }
     
     if (matchedUser) {
-      // Clear rate limit on successful login
-      clearRateLimit("WARGA", sName);
+      // Clear rate limit removed
       
       const token = Utilities.getUuid();
       const cache = CacheService.getScriptCache();
@@ -101,10 +98,7 @@ function verifyWargaToken(token, expectedGrupKK) {
  */
 function loginAdmin(password) {
   try {
-    const adminIp = "ADMIN_SESSION";
-    if (!checkRateLimit("ADMIN", adminIp)) {
-      return { success: false, message: "Terlalu banyak percobaan." };
-    }
+    // Rate limit dinonaktifkan
     
     const truePassword = getProperty("ADMIN_PASSWORD") || "12345678";
     if (password === truePassword) {
@@ -113,7 +107,6 @@ function loginAdmin(password) {
       const sessionHours = parseInt(getProperty("ADMIN_SESSION_HOURS") || "2", 10);
       cache.put(CONFIG.ADMIN_SESSION_CACHE_PREFIX + token, "VALID", sessionHours * 3600);
       
-      clearRateLimit("ADMIN", adminIp);
       logAkses("admin", "Admin", "Login Sukses", "-");
       return { success: true, token: token };
     } else {

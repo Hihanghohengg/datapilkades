@@ -25,6 +25,12 @@
   <?!= include('scripts_api_js'); ?>
   <?!= include('scripts_ui_js'); ?>
   <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (UI.getStore('adminToken')) {
+        UI.navigate('dashboard');
+      }
+    });
+
     function doAdminLogin() {
       const pass = document.getElementById('password').value;
       if(!pass) {

@@ -47,6 +47,12 @@
   <?!= include('scripts_api_js'); ?>
   <?!= include('scripts_ui_js'); ?>
   <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (UI.getStore('wargaAuth')) {
+        UI.navigate('data-kk');
+      }
+    });
+    
     // Populate dropdowns
     const dd = document.getElementById('tgl_dd');
     for(let i=1; i<=31; i++) dd.innerHTML += `<option value="${i<10?'0'+i:i}">${i}</option>`;
