@@ -11,7 +11,7 @@ function doGet(e) {
   const allowedPages = [
     'login', 'admin-login', 'data-kk', 'pilih-perubahan',
     'form-tambah', 'form-kurang', 'sukses', 'dashboard',
-    'laporan', 'monitoring', '404'
+    'laporan', 'monitoring', 'generate-pdf', 'log-akses', '404'
   ];
   
   if (!allowedPages.includes(page)) {

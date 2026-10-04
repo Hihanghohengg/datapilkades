@@ -197,6 +197,30 @@ function logAkses(role, nama, hasil, grupKK) {
 }
 
 /**
+ * Admin: Ambil data Log_Akses
+ */
+function getLogAkses(token) {
+  if (!verifyAdminToken(token)) return { success: false, message: "Unauthorized" };
+  
+  const db = getDatabase(CONFIG.SHEET_LOG);
+  if (db.length < 2) return { success: true, data: [] };
+  
+  const headers = db[0];
+  const data = db.slice(1);
+  let result = [];
+  
+  data.forEach((row, idx) => {
+    let obj = {};
+    headers.forEach((h, i) => {
+      obj[h] = row[i];
+    });
+    result.push(obj);
+  });
+  
+  return { success: true, data: result.reverse() }; // Newest first
+}
+
+/**
  * Admin: Ambil semua Laporan
  */
 function getLaporanList(token) {

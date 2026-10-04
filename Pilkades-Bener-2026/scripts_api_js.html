@@ -30,6 +30,7 @@
     approveLaporan: (token, id, jenis, data, grupKK) => API.call('approveLaporan', token, id, jenis, JSON.stringify(data), grupKK),
     tolakLaporan: (token, id, cat) => API.call('tolakLaporan', token, id, cat),
     updateWargaBatch: (token, updates) => API.call('updateWargaBatch', token, updates),
-    generatePDF: (grupKK, adminToken) => API.call('generatePdfForKK', adminToken || API._getWargaToken(), grupKK)
+    generatePDF: (grupKK, adminToken) => API.call('generatePdfForKK', adminToken || API._getWargaToken(), grupKK),
+    getLogAkses: (token) => API.call('getLogAkses', token)
   };
 </script>
