@@ -25,11 +25,11 @@
     navigate: function(pageUrl) {
       const go = (url) => {
         const fullUrl = url + "?page=" + pageUrl;
-        const a = document.createElement('a');
-        a.href = fullUrl;
-        a.target = '_top';
-        document.body.appendChild(a);
-        a.click();
+        window.open(fullUrl, "_top"); // Attempt top navigation first (works if sync)
+        setTimeout(() => {
+          // Fallback for async navigation block (navigates the iframe itself)
+          window.location.href = fullUrl; 
+        }, 100);
       };
       
       let cachedUrl = sessionStorage.getItem('SCRIPT_URL');
