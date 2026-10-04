@@ -8,7 +8,7 @@
   <div class="container">
     <div class="card">
       <div style="margin-bottom: 20px;">
-        <a href="#" onclick="UI.clearStore(); UI.navigate('login'); return false;" style="text-decoration:none; color:var(--primary); font-weight:600;">← Kembali ke Login</a>
+        <a href="<?= scriptUrl ?>?page=login" target="_top" onclick="UI.clearStore();" style="text-decoration:none; color:var(--primary); font-weight:600;">← Kembali ke Login</a>
       </div>
       <h2 class="mb-4" id="titleKk">Data Keluarga</h2>
       
@@ -24,7 +24,7 @@
         <div id="errorAlert" class="alert alert-error"></div>
         
         <button class="btn btn-success mb-4" id="btnSesuai" onclick="submitSesuai()">SESUAI</button>
-        <button class="btn btn-danger" onclick="UI.navigate('pilih-perubahan')">BELUM SESUAI</button>
+        <button class="btn btn-danger" onclick="top.location.href='<?= scriptUrl ?>?page=pilih-perubahan'">BELUM SESUAI</button>
       </div>
       
       <div id="sudahSesuaiArea" style="display:none; text-align:center;">

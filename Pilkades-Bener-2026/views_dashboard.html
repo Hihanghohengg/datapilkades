@@ -54,10 +54,10 @@
         </div>
 
         <div style="display:flex; flex-direction:column; gap:12px; margin-top:32px;">
-          <button class="btn btn-primary" style="justify-content:flex-start;" onclick="UI.navigate('monitoring')">📋 Monitoring KK</button>
-          <button class="btn btn-primary" style="justify-content:flex-start;" onclick="UI.navigate('laporan')">🔍 Laporan Masuk</button>
-          <button class="btn btn-outline" style="justify-content:flex-start;" onclick="UI.navigate('generate-pdf')">📄 Generate PDF</button>
-          <button class="btn btn-outline" style="justify-content:flex-start;" onclick="UI.navigate('log-akses')">📜 Log Akses</button>
+          <a href="<?= scriptUrl ?>?page=monitoring" target="_top" class="btn btn-primary" style="justify-content:flex-start; text-decoration:none;">📋 Monitoring KK</a>
+          <a href="<?= scriptUrl ?>?page=laporan" target="_top" class="btn btn-primary" style="justify-content:flex-start; text-decoration:none;">🔍 Laporan Masuk</a>
+          <a href="<?= scriptUrl ?>?page=generate-pdf" target="_top" class="btn btn-outline" style="justify-content:flex-start; text-decoration:none;">📄 Generate PDF</a>
+          <a href="<?= scriptUrl ?>?page=log-akses" target="_top" class="btn btn-outline" style="justify-content:flex-start; text-decoration:none;">📜 Log Akses</a>
         </div>
       </div>
     </div>

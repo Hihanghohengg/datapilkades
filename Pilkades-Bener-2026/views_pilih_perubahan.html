@@ -8,16 +8,16 @@
   <div class="container">
     <div class="card">
       <div style="margin-bottom: 20px;">
-        <a href="#" onclick="UI.navigate('data-kk'); return false;" style="text-decoration:none; color:var(--primary); font-weight:600;">← Kembali ke Data Keluarga</a>
+        <a href="<?= scriptUrl ?>?page=data-kk" target="_top" style="text-decoration:none; color:var(--primary); font-weight:600;">← Kembali ke Data Keluarga</a>
       </div>
       <h2 class="mb-4 text-center">Apa yang tidak sesuai?</h2>
       
-      <div style="border: 2px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; cursor: pointer; transition: 0.2s;" onclick="UI.navigate('form-tambah')" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="border: 2px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; cursor: pointer; transition: 0.2s;" onclick="top.location.href='<?= scriptUrl ?>?page=form-tambah'" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
         <h3 style="display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">➕</span> TAMBAH ORANG</h3>
         <p class="text-muted">Ada anggota keluarga baru yang belum masuk daftar</p>
       </div>
       
-      <div style="border: 2px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; cursor: pointer; transition: 0.2s;" onclick="UI.navigate('form-kurang')" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="border: 2px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; cursor: pointer; transition: 0.2s;" onclick="top.location.href='<?= scriptUrl ?>?page=form-kurang'" onmouseover="this.style.borderColor='var(--danger)'" onmouseout="this.style.borderColor='var(--border)'">
         <h3 style="display:flex; align-items:center; gap:10px;"><span style="font-size:24px;">➖</span> KURANG ORANG</h3>
         <p class="text-muted">Ada anggota keluarga yang pindah, meninggal, dll</p>
       </div>
