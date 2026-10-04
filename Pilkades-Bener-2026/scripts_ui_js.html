@@ -27,10 +27,15 @@
       if (cachedUrl) {
         top.location.href = cachedUrl + "?page=" + pageUrl;
       } else {
-        google.script.run.withSuccessHandler(function(url) {
-          sessionStorage.setItem('SCRIPT_URL', url);
-          top.location.href = url + "?page=" + pageUrl;
-        }).getScriptUrl();
+        google.script.run
+          .withSuccessHandler(function(url) {
+            sessionStorage.setItem('SCRIPT_URL', url);
+            top.location.href = url + "?page=" + pageUrl;
+          })
+          .withFailureHandler(function(err) {
+            UI.showError("Koneksi gagal. Silakan coba lagi.");
+          })
+          .getScriptUrl();
       }
     },
     store: function(key, val) { sessionStorage.setItem(key, JSON.stringify(val)); },

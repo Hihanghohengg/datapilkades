@@ -26,7 +26,7 @@
       <label>Tanggal Lahir</label>
       <div style="display:flex; gap:10px; margin-bottom:16px;">
         <select id="tgl_dd">
-          <option value="">Tgl</option>
+          <option value="">Tanggal</option>
           <!-- JS will populate -->
         </select>
         <select id="tgl_mm">
@@ -88,26 +88,21 @@
       UI.setLoading('btnLogin', true);
       
       API.loginWarga(nama, formattedTgl).then(res => {
-        if(res.success) {
-          UI.store('wargaAuth', { token: res.token, nama: res.nama, grupKK: res.grupKK });
-          
-          // Langsung tarik data keluarga, lewati halaman konfirmasi
-          API.getKeluarga(res.grupKK).then(resKeluarga => {
-            UI.setLoading('btnLogin', false);
-            if(resKeluarga.success) {
-              UI.store('wargaData', resKeluarga.data);
-              UI.navigate('data-kk');
-            } else {
-              UI.showError("Gagal memuat data keluarga");
-            }
-          });
-        } else {
-          UI.setLoading('btnLogin', false);
-          UI.showError(res.message);
+        if(!res.success) {
+          throw new Error(res.message);
         }
+        UI.store('wargaAuth', { token: res.token, nama: res.nama, grupKK: res.grupKK });
+        return API.getKeluarga(res.grupKK);
+      }).then(resKeluarga => {
+        UI.setLoading('btnLogin', false);
+        if(!resKeluarga.success) {
+          throw new Error("Gagal memuat data keluarga: " + resKeluarga.message);
+        }
+        UI.store('wargaData', resKeluarga.data);
+        UI.navigate('data-kk');
       }).catch(e => {
         UI.setLoading('btnLogin', false);
-        UI.showError("Terjadi kesalahan sistem.");
+        UI.showError(e.message || "Terjadi kesalahan sistem.");
       });
     }
   </script>
