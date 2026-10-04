@@ -7,6 +7,9 @@
 <body>
   <div class="container">
     <div class="card">
+      <div style="margin-bottom: 20px;">
+        <a href="#" onclick="UI.clearStore(); UI.navigate('login'); return false;" style="text-decoration:none; color:var(--primary); font-weight:600;">← Kembali ke Login</a>
+      </div>
       <h2 class="mb-4" id="titleKk">Data Keluarga</h2>
       
       <div id="listAnggota" style="margin-bottom: 24px;">
@@ -79,7 +82,7 @@
       API.generatePDF(auth.grupKK).then(res => {
         UI.setLoading('btnPdf', false);
         if(res.success) {
-          window.open(res.url, '_blank');
+          document.getElementById('btnPdf').outerHTML = `<a href="${res.url}" target="_blank" class="btn btn-primary" style="margin-top:10px;">⬇️ KLIK DI SINI UNTUK MENGUNDUH PDF</a>`;
         } else {
           alert("Gagal generate PDF: " + res.message);
         }

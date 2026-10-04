@@ -14,8 +14,8 @@
       const btn = document.getElementById(btnId);
       if(!btn) return;
       if(isLoading) {
-        btn.dataset.originalText = btn.innerHTML;
-        btn.innerHTML = 'Memproses...';
+        if (!btn.dataset.originalText) btn.dataset.originalText = btn.innerHTML;
+        btn.innerHTML = '<div class="spinner"></div> Mohon Tunggu...';
         btn.disabled = true;
       } else {
         btn.innerHTML = btn.dataset.originalText;
