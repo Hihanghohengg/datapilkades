@@ -13,14 +13,21 @@
         <!-- List inserted by JS -->
       </div>
       
-      <div class="text-center mb-4">
-        <p style="font-weight:600; font-size:18px;">Apakah data sudah sesuai?</p>
+      <div id="konfirmasiArea">
+        <div class="text-center mb-4">
+          <p style="font-weight:600; font-size:18px;">Apakah data sudah sesuai?</p>
+        </div>
+        
+        <div id="errorAlert" class="alert alert-error"></div>
+        
+        <button class="btn btn-success mb-4" id="btnSesuai" onclick="submitSesuai()">SESUAI</button>
+        <button class="btn btn-danger" onclick="UI.navigate('pilih-perubahan')">BELUM SESUAI</button>
       </div>
       
-      <div id="errorAlert" class="alert alert-error"></div>
-      
-      <button class="btn btn-success mb-4" id="btnSesuai" onclick="submitSesuai()">SESUAI</button>
-      <button class="btn btn-danger" onclick="UI.navigate('pilih-perubahan')">BELUM SESUAI</button>
+      <div id="sudahSesuaiArea" style="display:none; text-align:center;">
+        <div class="alert alert-success mb-4">✅ Data keluarga Anda sudah dikonfirmasi.</div>
+        <button class="btn btn-success" id="btnPdf" onclick="downloadPdf()">📄 DOWNLOAD FORM PDF</button>
+      </div>
     </div>
   </div>
 
@@ -46,6 +53,12 @@
         `;
       });
       document.getElementById('listAnggota').innerHTML = html;
+      
+      // Jika statusnya sudah Sesuai atau direvisi, sembunyikan tombol konfirmasi dan munculkan tombol PDF
+      if (data[0] && (data[0].StatusKonfirmasi === 'Sesuai' || data[0].StatusKonfirmasi === 'Sudah Direvisi')) {
+        document.getElementById('konfirmasiArea').style.display = 'none';
+        document.getElementById('sudahSesuaiArea').style.display = 'block';
+      }
     }
     
     function submitSesuai() {
@@ -57,6 +70,18 @@
           UI.navigate('sukses');
         } else {
           UI.showError(res.message);
+        }
+      });
+    }
+
+    function downloadPdf() {
+      UI.setLoading('btnPdf', true);
+      API.generatePDF(auth.grupKK).then(res => {
+        UI.setLoading('btnPdf', false);
+        if(res.success) {
+          window.open(res.url, '_blank');
+        } else {
+          alert("Gagal generate PDF: " + res.message);
         }
       });
     }
