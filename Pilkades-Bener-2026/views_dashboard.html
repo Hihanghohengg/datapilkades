@@ -4,6 +4,10 @@
   <base target="_top">
   <?!= include('styles_main'); ?>
   <?!= include('styles_admin'); ?>
+  <style>
+    .clickable-card { cursor: pointer; transition: transform 0.2s; }
+    .clickable-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  </style>
 </head>
 <body class="admin-layout">
   
@@ -24,15 +28,15 @@
       
       <div id="content" style="display:none;">
         <div class="grid-2 mb-4">
-          <div class="card" style="margin:0;">
+          <div class="card clickable-card" style="margin:0;" onclick="showDetail('Semua')">
             <div style="font-size:14px; color:var(--muted);">Total Warga</div>
             <div style="font-size:32px; font-weight:700;" id="stTotal">0</div>
           </div>
-          <div class="card" style="margin:0;">
+          <div class="card clickable-card" style="margin:0;" onclick="showDetail('Sesuai')">
             <div style="font-size:14px; color:var(--success);">Sudah Sesuai</div>
             <div style="font-size:32px; font-weight:700; color:var(--success);" id="stSudah">0</div>
           </div>
-          <div class="card" style="margin:0;">
+          <div class="card clickable-card" style="margin:0;" onclick="showDetail('Belum')">
             <div style="font-size:14px; color:var(--muted);">Belum Isi</div>
             <div style="font-size:32px; font-weight:700;" id="stBelum">0</div>
           </div>
@@ -40,13 +44,23 @@
         
         <h3 class="mb-2">Status Revisi</h3>
         <div class="grid-2">
-          <div class="card" style="margin:0; border-left:4px solid var(--warning);">
+          <div class="card clickable-card" style="margin:0; border-left:4px solid var(--warning);" onclick="showDetail('Menunggu Review')">
             <div style="font-size:14px;">Menunggu Review</div>
             <div style="font-size:24px; font-weight:700;" id="stReview">0</div>
           </div>
-          <div class="card" style="margin:0; border-left:4px solid var(--primary);">
+          <div class="card clickable-card" style="margin:0; border-left:4px solid var(--primary);" onclick="showDetail('Sudah Direvisi')">
             <div style="font-size:14px;">Sudah Direvisi</div>
             <div style="font-size:24px; font-weight:700;" id="stDirevisi">0</div>
+          </div>
+        </div>
+
+        <div id="detailArea" style="display:none; margin-top:24px;">
+          <h3 class="mb-2" id="detailTitle">Detail Data</h3>
+          <div class="table-wrapper">
+            <table id="tblDetail">
+              <thead><tr><th>No</th><th>Grup KK</th><th>Nama</th><th>Status</th></tr></thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -57,6 +71,8 @@
   <?!= include('scripts_ui_js'); ?>
   <?!= include('scripts_admin_js'); ?>
   <script>
+    let wargaList = [];
+
     const token = UI.getStore('adminToken');
     if(token) {
       API.getDashboardStats(token).then(res => {
@@ -68,8 +84,37 @@
           document.getElementById('stBelum').textContent = res.belum;
           document.getElementById('stReview').textContent = res.review;
           document.getElementById('stDirevisi').textContent = res.direvisi;
+          wargaList = res.list || [];
         }
       });
+    }
+
+    function showDetail(status) {
+      document.getElementById('detailArea').style.display = 'block';
+      document.getElementById('detailTitle').textContent = "Data Warga: " + status;
+      
+      const tbody = document.querySelector('#tblDetail tbody');
+      tbody.innerHTML = '';
+      
+      let filtered = status === 'Semua' ? wargaList : wargaList.filter(x => x.Status === status);
+      
+      if(filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Tidak ada data</td></tr>';
+        return;
+      }
+      
+      let html = '';
+      filtered.forEach((w, idx) => {
+        html += `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${w.GrupKK}</td>
+            <td>${w.Nama}</td>
+            <td><span class="badge" style="background:var(--bg); color:var(--text);">${w.Status}</span></td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
     }
   </script>
 </body>

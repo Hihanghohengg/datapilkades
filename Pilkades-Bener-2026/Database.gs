@@ -310,7 +310,10 @@ function getDashboardStats(token) {
   if (!verifyAdminToken(token)) return null;
   
   const warga = getDatabase(CONFIG.SHEET_WARGA).slice(1);
-  const idxStatus = getDatabase(CONFIG.SHEET_WARGA)[0].indexOf("StatusKonfirmasi");
+  const headers = getDatabase(CONFIG.SHEET_WARGA)[0];
+  const idxStatus = headers.indexOf("StatusKonfirmasi");
+  const idxGrupKK = headers.indexOf("GrupKK");
+  const idxNama = headers.indexOf("Nama");
   
   let totalData = warga.length;
   let sudah = 0;
@@ -318,12 +321,20 @@ function getDashboardStats(token) {
   let review = 0;
   let direvisi = 0;
   
+  let listSemua = [];
+  
   warga.forEach(row => {
     let stat = row[idxStatus];
     if (stat === "Sesuai") sudah++;
     else if (stat === "Belum") belum++;
     else if (stat === "Menunggu Review") review++;
     else if (stat === "Sudah Direvisi") direvisi++;
+    
+    listSemua.push({
+      GrupKK: row[idxGrupKK],
+      Nama: row[idxNama],
+      Status: stat
+    });
   });
   
   return {
@@ -331,6 +342,7 @@ function getDashboardStats(token) {
     sudah: sudah,
     belum: belum,
     review: review,
-    direvisi: direvisi
+    direvisi: direvisi,
+    list: listSemua
   };
 }

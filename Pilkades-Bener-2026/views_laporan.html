@@ -65,9 +65,10 @@
             
             <div style="background:var(--bg); padding:16px; border-radius:8px; margin-bottom:20px; font-family:monospace; font-size:13px; white-space:pre-wrap;" id="detData"></div>
             
-            <div id="actionArea" style="display:flex; gap:10px;">
+            <div id="actionArea" style="display:flex; gap:10px; flex-wrap:wrap;">
               <button class="btn btn-success" id="btnApprove" onclick="doApprove()">✅ APPROVE (UPDATE DB)</button>
               <button class="btn btn-outline" style="color:var(--danger)" onclick="doTolak()">❌ TOLAK</button>
+              <button class="btn btn-primary" onclick="bukaTindakLanjut()">🔧 TINDAK LANJUT (EDIT DB)</button>
             </div>
           </div>
           
@@ -167,7 +168,11 @@
       
       document.getElementById('actionArea').style.display = activeLap.Status === 'Selesai' || activeLap.Status === 'Ditolak' ? 'none' : 'flex';
       
-      // Load DB Table
+      // Sembunyikan DB Table pada awalnya, baru dibuka saat Tindak Lanjut
+      document.getElementById('dbEditor').style.display = 'none';
+    }
+    
+    function bukaTindakLanjut() {
       document.getElementById('dbEditor').style.display = 'block';
       document.getElementById('dbGrupKkLabel').textContent = activeLap.GrupKK;
       dbUpdates = [];
