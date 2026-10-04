@@ -28,30 +28,52 @@ function generatePdfForKK(token, grupKK) {
              ket.indexOf("dihapus") === -1;
     });
     
-    // Pastikan Kepala Keluarga (Laki-laki / paling tua) berada di urutan pertama
+    // Cari Kepala Keluarga (Rule: Eksplisit KEPALA -> Laki-laki Tertua -> Orang Tertua)
+    let kepalaKK = pemilihList.find(p => String(p.HubunganKeluarga || "").toUpperCase().includes("KEPALA"));
+    
+    if (!kepalaKK) {
+      let males = pemilihList.filter(p => String(p.JK || "").toUpperCase() === "LAKI-LAKI");
+      if (males.length > 0) {
+        males.sort((a, b) => (parseInt(b.Umur) || 0) - (parseInt(a.Umur) || 0));
+        kepalaKK = males[0];
+      }
+    }
+    if (!kepalaKK && pemilihList.length > 0) {
+      let all = [...pemilihList];
+      all.sort((a, b) => (parseInt(b.Umur) || 0) - (parseInt(a.Umur) || 0));
+      kepalaKK = all[0];
+    }
+    
+    // Fungsi pembobotan urutan standar Kartu Keluarga
+    const getHubunganScore = (hub) => {
+      let h = String(hub || "").toUpperCase();
+      if (h.includes("KEPALA")) return 1;
+      if (h.includes("ISTRI")) return 2;
+      if (h.includes("ANAK")) return 3;
+      return 4; // Famili lain / Orang tua / dll
+    };
+
+    // Lakukan sorting
     pemilihList.sort((a, b) => {
-      let hubA = String(a.HubunganKeluarga || "").toUpperCase();
-      let hubB = String(b.HubunganKeluarga || "").toUpperCase();
-      let isKepalaA = hubA.includes("KEPALA");
-      let isKepalaB = hubB.includes("KEPALA");
+      // Kepala KK (yang sudah ditentukan di atas) mutlak di urutan pertama (index 0)
+      if (a === kepalaKK) return -1;
+      if (b === kepalaKK) return 1;
       
-      if (isKepalaA && !isKepalaB) return -1;
-      if (!isKepalaA && isKepalaB) return 1;
+      let scoreA = getHubunganScore(a.HubunganKeluarga);
+      let scoreB = getHubunganScore(b.HubunganKeluarga);
       
-      // Laki-laki diutamakan jika status kepala tidak jelas
-      let aIsLaki = String(a.JK || "").toUpperCase() === "LAKI-LAKI";
-      let bIsLaki = String(b.JK || "").toUpperCase() === "LAKI-LAKI";
-      if (aIsLaki && !bIsLaki) return -1;
-      if (!aIsLaki && bIsLaki) return 1;
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB; // Urutan: Istri -> Anak -> Lainnya
+      }
       
-      // Urutkan berdasarkan Umur (Tertua ke Termuda)
+      // Jika hubungannya sama (misal sesama Anak), urutkan dari Anak Tertua ke Termuda
       let umurA = parseInt(a.Umur) || 0;
       let umurB = parseInt(b.Umur) || 0;
       return umurB - umurA;
     });
     
-    // Kepala KK diambil dari orang pertama hasil sorting
-    let namaKepalaKK = pemilihList.length > 0 ? pemilihList[0].Nama : "-";
+    // Nama Kepala KK untuk ditempel di field KEPALA_KK
+    let namaKepalaKK = kepalaKK ? kepalaKK.Nama : "-";
 
     const copy = DriveApp.getFileById(templateId).makeCopy('Form_Pilkades_' + grupKK);
     const doc = DocumentApp.openById(copy.getId());
