@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Konfirmasi Pemilih - Pilkades Bener 2026</title>
+  <?!= include('frontend/styles/main'); ?>
+</head>
+<body>
+  <div class="container">
+    <div class="header-logo">
+      <div class="brand-badge">PILKADES BENER 2026</div>
+      <h1>Pendataan Pemilih</h1>
+      <p>Sistem Konfirmasi & Validasi Mandiri Warga</p>
+    </div>
+    
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px; padding-bottom:16px; border-bottom:1px solid var(--border);">
+        <h2 style="margin:0; font-size:18px;">Login Warga</h2>
+        <a href="<?= scriptUrl ?>?page=admin-login" target="_top" style="text-decoration:none; color:var(--primary); font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:4px; padding:6px 12px; border-radius:6px; background:var(--primary-light);">
+          Login as admin
+        </a>
+      </div>
+      
+      <div id="errorAlert" class="alert alert-error"></div>
+      
+      <div class="mb-3">
+        <label for="nama">Nama Lengkap Sesuai KTP / KK</label>
+        <input type="text" id="nama" placeholder="Contoh: Budi Santoso" autocomplete="name" autofocus>
+      </div>
+      
+      <div class="mb-4">
+        <label>Tanggal Lahir</label>
+        <div style="display:grid; grid-template-columns: 1fr 1.3fr 1.1fr; gap:10px;">
+          <select id="tgl_dd" style="margin-bottom:0;">
+            <option value="">Tanggal</option>
+          </select>
+          <select id="tgl_mm" style="margin-bottom:0;">
+            <option value="">Bulan</option>
+          </select>
+          <select id="tgl_yy" style="margin-bottom:0;">
+            <option value="">Tahun</option>
+          </select>
+        </div>
+      </div>
+      
+      <button class="btn btn-primary" id="btnLogin" onclick="doLogin()">Masuk</button>
+    </div>
+  </div>
+
+  <?!= include('frontend/scripts/api_js'); ?>
+  <?!= include('frontend/scripts/ui_js'); ?>
+  <script>
+    // Pre-cache script URL instantly to eliminate getScriptUrl round-trips
+    sessionStorage.setItem('SCRIPT_URL', '<?= scriptUrl ?>');
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (UI.getStore('wargaAuth')) {
+        UI.navigate('data-kk');
+      }
+    });
+    
+    // Populate dropdowns
+    const dd = document.getElementById('tgl_dd');
+    for(let i=1; i<=31; i++) dd.innerHTML += `<option value="${i<10?'0'+i:i}">${i}</option>`;
+    
+    const mm = document.getElementById('tgl_mm');
+    const namaBulan = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    namaBulan.forEach((b, idx) => {
+      let val = idx + 1;
+      mm.innerHTML += `<option value="${val < 10 ? '0' + val : val}">${b}</option>`;
+    });
+    
+    const yy = document.getElementById('tgl_yy');
+    const currentYear = new Date().getFullYear();
+    for(let i=currentYear; i>=1920; i--) yy.innerHTML += `<option value="${i}">${i}</option>`;
+
+    // Allow Enter key to trigger login
+    document.getElementById('nama').addEventListener('keydown', (e) => {
+      if(e.key === 'Enter') doLogin();
+    });
+
+    function doLogin() {
+      const nama = document.getElementById('nama').value.trim();
+      const d = dd.value;
+      const m = mm.value;
+      const y = yy.value;
+      
+      if(!nama || !d || !m || !y) {
+        UI.showError("Mohon lengkapi Nama dan Tanggal Lahir Anda.");
+        return;
+      }
+      
+      const formattedTgl = `${d}-${m}-${y}`;
+      UI.setLoading('btnLogin', true, 'Memeriksa Data...');
+      
+      API.loginWarga(nama, formattedTgl).then(res => {
+        if(!res.success) {
+          throw new Error(res.message);
+        }
+        UI.store('wargaAuth', { 
+          token: res.token, 
+          userNama: res.nama, 
+          userGrupKK: res.grupKK,
+          userAlamat: res.alamat,
+          userRT: res.rt,
+          userRW: res.rw
+        });
+
+        // Fast path: If keluargaData was returned directly in loginWarga
+        if (res.keluargaData && res.keluargaData.length > 0) {
+          UI.store('wargaData', res.keluargaData);
+          UI.setLoading('btnLogin', false);
+          UI.navigate('data-kk');
+          return;
+        }
+
+        // Fallback path
+        return API.getKeluarga(res.grupKK).then(resKeluarga => {
+          UI.setLoading('btnLogin', false);
+          if(!resKeluarga.success) {
+            throw new Error("Gagal memuat data keluarga: " + resKeluarga.message);
+          }
+          UI.store('wargaData', resKeluarga.data);
+          UI.navigate('data-kk');
+        });
+      }).catch(e => {
+        UI.setLoading('btnLogin', false);
+        UI.showError(e.message || "Terjadi kesalahan sistem.");
+      });
+    }
+  </script>
+</body>
+</html>

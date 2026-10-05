@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login Petugas - Pilkades Bener 2026</title>
+  <?!= include('frontend/styles/main'); ?>
+</head>
+<body>
+  <div class="container" style="margin-top: 40px;">
+    <div class="header-logo">
+      <div class="brand-badge">PORTAL PETUGAS</div>
+      <h1>Dashboard Pantarlih</h1>
+      <p>Pilkades Bener 2026</p>
+    </div>
+
+    <div class="card">
+      <div style="margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center;">
+        <a href="<?= scriptUrl ?>?page=login" target="_top" style="text-decoration:none; color:var(--primary); font-weight:600; font-size:13.5px; display:inline-flex; align-items:center; gap:6px;">
+          ← Kembali ke Login Warga
+        </a>
+      </div>
+      
+      <h2 style="font-size:18px; margin-bottom:16px;">Masuk Sebagai Petugas / Admin</h2>
+      
+      <div id="errorAlert" class="alert alert-error"></div>
+      
+      <div class="mb-4">
+        <label for="password">Kata Sandi Petugas</label>
+        <input type="password" id="password" placeholder="Masukkan password admin" autofocus>
+      </div>
+      
+      <button class="btn btn-primary" id="btnLogin" onclick="doAdminLogin()">Masuk</button>
+    </div>
+  </div>
+
+  <?!= include('frontend/scripts/api_js'); ?>
+  <?!= include('frontend/scripts/ui_js'); ?>
+  <script>
+    sessionStorage.setItem('SCRIPT_URL', '<?= scriptUrl ?>');
+
+    document.addEventListener("DOMContentLoaded", () => {
+      if (UI.getStore('adminToken')) {
+        UI.navigate('dashboard');
+      }
+    });
+
+    document.getElementById('password').addEventListener('keydown', (e) => {
+      if(e.key === 'Enter') doAdminLogin();
+    });
+
+    function doAdminLogin() {
+      const pass = document.getElementById('password').value;
+      if(!pass) {
+        UI.showError("Password tidak boleh kosong.");
+        return;
+      }
+      
+      UI.setLoading('btnLogin', true, 'Memverifikasi...');
+      
+      API.loginAdmin(pass).then(res => {
+        UI.setLoading('btnLogin', false);
+        if(res.success) {
+          UI.store('adminToken', res.token);
+          UI.navigate('dashboard');
+        } else {
+          UI.showError(res.message || "Password salah.");
+        }
+      }).catch(e => {
+        UI.setLoading('btnLogin', false);
+        UI.showError("Terjadi kesalahan sistem.");
+      });
+    }
+  </script>
+</body>
+</html>

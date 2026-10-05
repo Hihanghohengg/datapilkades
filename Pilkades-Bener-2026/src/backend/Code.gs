@@ -9,20 +9,26 @@ function doGet(e) {
 
   const page = e.parameter.page || 'login';
   const allowedPages = [
-    'login', 'admin-login', 'data-kk', 'pilih-perubahan',
-    'form-tambah', 'form-kurang', 'form-edit', 'sukses', 'dashboard',
-    'laporan', 'monitoring', 'generate-pdf', 'log-akses', '404'
+    'login', 'admin-login', 'data-kk', 'sukses', 'dashboard',
+    'monitoring', 'generate-pdf', '404'
   ];
   
   if (!allowedPages.includes(page)) {
-    return HtmlService.createTemplateFromFile('views/404')
+    return HtmlService.createTemplateFromFile('frontend/views/404')
       .evaluate()
       .setTitle('404 Not Found')
       .addMetaTag('viewport', 'width=device-width, initial-scale=1');
   }
 
-  const pageName = page.replace(/-/g, '_');
-  const template = HtmlService.createTemplateFromFile(`views_${pageName}`);
+  let pageName = page.replace(/-/g, '_');
+  
+  // SPA Routing for admin pages
+  const adminSpaPages = ['dashboard', 'monitoring', 'generate_pdf'];
+  if (adminSpaPages.includes(pageName)) {
+    pageName = 'dashboard';
+  }
+
+  const template = HtmlService.createTemplateFromFile(`frontend/views/${pageName}`);
   
   // Pass configuration variables to template if needed
   template.config = CONFIG;

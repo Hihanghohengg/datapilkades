@@ -1,0 +1,30 @@
+<script>
+  const API = {
+    call: function(serverFunction, ...args) {
+      return new Promise((resolve, reject) => {
+        google.script.run
+          .withSuccessHandler(resolve)
+          .withFailureHandler(reject)
+          [serverFunction](...args);
+      });
+    },
+    
+    // Auth
+    loginWarga: (nama, tgl) => API.call('loginWarga', nama, tgl),
+    loginAdmin: (pass) => API.call('loginAdmin', pass),
+    
+    // Warga (auto-inject token)
+    _getWargaToken: () => {
+      try { return JSON.parse(sessionStorage.getItem('wargaAuth') || '{}').token; } 
+      catch(e) { return null; }
+    },
+    getKeluarga: (grupKK) => API.call('getKeluargaByGrupKK', API._getWargaToken(), grupKK),
+    submitSesuai: (grupKK, nama) => API.call('submitSesuai', API._getWargaToken(), grupKK, nama),
+    wargaUpdateKeluarga: (grupKK, updates, namaUser) => API.call('wargaUpdateKeluarga', API._getWargaToken(), grupKK, updates, namaUser),
+    
+    // Admin
+    getDashboardStats: (token) => API.call('getDashboardStats', token),
+    getAllWarga: (token) => API.call('getAllWarga', token),
+    generatePDF: (grupKK, adminToken) => API.call('generatePdfForKK', adminToken || API._getWargaToken(), grupKK)
+  };
+</script>

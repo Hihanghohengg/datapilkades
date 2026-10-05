@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Keluarga - Pilkades Bener 2026</title>
+  <?!= include('frontend/styles/main'); ?>
+  <style>
+    .list-item { 
+      padding: 14px 16px; 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-sm); 
+      margin-bottom: 10px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background: #ffffff; 
+      transition: var(--transition);
+    }
+    .list-item:hover {
+      border-color: var(--primary-border);
+      background: #fbfdff;
+    }
+    .action-btn { 
+      padding: 6px 12px; 
+      font-size: 13px; 
+      min-height: 36px; 
+      width: auto; 
+      display: inline-flex; 
+      cursor: pointer; 
+      border-radius: 6px;
+    }
+    .strikethrough { text-decoration: line-through; opacity: 0.55; background: #f8fafc; }
+    .badge-draft { 
+      background: var(--primary-light); 
+      color: var(--primary); 
+      border: 1px solid var(--primary-border); 
+      padding: 2px 8px; 
+      border-radius: 999px; 
+      font-size: 11px; 
+      font-weight: 600; 
+      margin-left: 6px; 
+    }
+    .card-top-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-logo" style="margin-bottom: 20px;">
+      <div class="brand-badge">PILKADES BENER 2026</div>
+      <h1 style="font-size:22px;">Konfirmasi Data Keluarga</h1>
+    </div>
+    
+    <!-- VIEW CARD -->
+    <div class="card" id="cardView">
+      <div class="card-top-nav">
+        <a href="<?= scriptUrl ?>?page=login" target="_top" onclick="UI.clearStore();" style="text-decoration:none; color:var(--muted); font-size:13px; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+          ← Keluar
+        </a>
+        <span class="text-muted" style="font-size:12.5px;" id="badgeGrupKK"></span>
+      </div>
+      
+      <h2 class="mb-3" id="titleKk" style="font-size:18px;">Data Anggota Keluarga</h2>
+      <p class="text-muted mb-4" style="font-size:13.5px;">Pastikan data seluruh anggota keluarga yang tercantum di bawah ini sudah akurat dan mutakhir.</p>
+      
+      <div id="listAnggotaView" style="margin-bottom: 24px;">
+        <!-- List inserted by JS -->
+      </div>
+      
+      <div id="konfirmasiArea">
+        <div class="text-center mb-4" style="background:var(--primary-light); border:1px solid var(--primary-border); border-radius:var(--radius-sm); padding:16px;">
+          <p style="font-weight:600; font-size:15px; color:#1e40af; margin:0;">Apakah data anggota keluarga di atas sudah benar?</p>
+        </div>
+        
+        <div id="errorAlert" class="alert alert-error"></div>
+        
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="btn btn-success" id="btnSesuai" onclick="submitSesuai()" style="width:100%;">
+            Sesuai
+          </button>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-primary" onclick="masukModeEditDanTambah()" style="flex:1;">
+              + Tambah Anggota
+            </button>
+            <button class="btn btn-outline" onclick="masukModeEdit()" style="flex:1;">
+              Ubah
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div id="sudahSesuaiArea" style="display:none; text-align:center;">
+        <div class="alert alert-success mb-4" style="display:block;">
+          <strong>✅ Data Terkonfirmasi Sesuai</strong><br>
+          Terima kasih telah melakukan konfirmasi mandiri. Anda dapat mengunduh bukti tanda terima PDF di bawah ini.
+        </div>
+        <button class="btn btn-primary" id="btnPdf" onclick="downloadPdf()">
+          Unduh
+        </button>
+      </div>
+    </div>
+    
+    <!-- EDIT MODE CARD -->
+    <div class="card" id="cardEdit" style="display:none;">
+      <h2 class="mb-2" style="font-size:18px;">Perbaikan Data Keluarga</h2>
+      <p class="text-muted mb-4" style="font-size:13.5px;">Silakan perbaiki data yang salah, tandai yang pindah/meninggal, atau tambahkan anggota baru.</p>
+      
+      <div id="listAnggotaEdit" style="margin-bottom: 16px;"></div>
+      
+      <button class="btn btn-outline mb-4" onclick="bukaModalTambah()" style="width:100%; border-style:dashed; border-color:var(--primary); color:var(--primary); background:var(--primary-light);">
+        + Tambah Anggota
+      </button>
+      
+      <div style="background:#f8fafc; padding:18px; border-radius:var(--radius-sm); border:1px solid var(--border);">
+        <p style="font-size:13.5px; font-weight:600; color:var(--neutral); margin-bottom:12px;">Simpan dan Sahkan Perubahan:</p>
+        <div id="editAlert" class="alert alert-error" style="display:none;"></div>
+        <button class="btn btn-primary" id="btnSimpanPerubahan" onclick="simpanSemuaPerubahan()">
+          Simpan
+        </button>
+        <button class="btn btn-outline mt-2" onclick="batalEdit()" style="width:100%;">
+          Batal
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT/TAMBAH -->
+  <div id="modalWarga" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:100; align-items:center; justify-content:center; padding:20px;">
+    <div class="card" style="width:100%; max-width:500px; max-height:90vh; overflow-y:auto; margin:0;">
+      <h2 id="modalTitle">Edit Anggota</h2>
+      <input type="hidden" id="inpRowIdx">
+      <input type="hidden" id="inpDraftId">
+      <input type="hidden" id="inpAction"> <!-- update/add -->
+      
+      <label>Nama Lengkap *</label>
+      <input type="text" id="inpNama">
+      
+      <label>NIK</label>
+      <input type="text" id="inpNIK">
+      
+      <label>Jenis Kelamin *</label> 
+      <select id="inpJK"><option value="">Pilih...</option><option value="LAKI-LAKI">LAKI-LAKI</option><option value="PEREMPUAN">PEREMPUAN</option></select>
+      
+      <label>Tempat Lahir</label>
+      <input type="text" id="inpTempat">
+      
+      <label>Tgl Lahir * (DD/MM/YYYY atau YYYY-MM-DD)</label>
+      <input type="text" id="inpTgl" placeholder="Contoh: 17/08/1990">
+      
+      <label>Status Perkawinan *</label>
+      <select id="inpStatus"><option value="">Pilih...</option><option value="KAWIN">KAWIN</option><option value="BELUM KAWIN">BELUM KAWIN</option><option value="CERAI MATI">CERAI MATI</option><option value="CERAI HIDUP">CERAI HIDUP</option></select>
+      
+      <label>Hubungan Keluarga *</label>
+      <select id="inpHub">
+        <option value="">Pilih...</option>
+        <option value="KEPALA KELUARGA">KEPALA KELUARGA</option>
+        <option value="ISTRI">ISTRI</option>
+        <option value="SUAMI">SUAMI</option>
+        <option value="ANAK">ANAK</option>
+        <option value="MENANTU">MENANTU</option>
+        <option value="CUCU">CUCU</option>
+        <option value="ORANG TUA">ORANG TUA</option>
+        <option value="MERTUA">MERTUA</option>
+        <option value="FAMILI LAIN">FAMILI LAIN</option>
+        <option value="LAINNYA">LAINNYA</option>
+      </select>
+      
+      <label>Disabilitas</label>
+      <select id="inpDis">
+        <option value="TIDAK">TIDAK</option>
+        <option value="FISIK">FISIK</option>
+        <option value="NETRA">NETRA</option>
+        <option value="RUNGU/WICARA">RUNGU/WICARA</option>
+        <option value="MENTAL">MENTAL</option>
+        <option value="LAINNYA">LAINNYA</option>
+      </select>
+      
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button class="btn btn-outline" onclick="document.getElementById('modalWarga').style.display='none'">Batal</button>
+        <button class="btn btn-primary" onclick="simpanKeDraft()">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+  <?!= include('frontend/scripts/api_js'); ?>
+  <?!= include('frontend/scripts/ui_js'); ?>
+  <?!= include('frontend/scripts/app_js'); ?>
+  <script>
+    sessionStorage.setItem('SCRIPT_URL', '<?= scriptUrl ?>');
+    const auth = UI.getStore('wargaAuth');
+    const dataOriginal = UI.getStore('wargaData') || [];
+    let pendingUpdates = []; // { type: 'update'|'delete'|'add', draftId, rowIndex, data, alasan }
+    let draftCounter = 1;
+
+    if(!auth || dataOriginal.length === 0) {
+      UI.navigate('login');
+    } else {
+      initView();
+    }
+    
+    function initView() {
+      if (auth && auth.userGrupKK) {
+        document.getElementById('badgeGrupKK').textContent = "No. KK: " + auth.userGrupKK;
+      }
+      let kepalaName = (dataOriginal[0] ? dataOriginal[0].KepalaKeluarga || dataOriginal[0].Nama || "" : "");
+      document.getElementById('titleKk').textContent = "Keluarga " + kepalaName;
+      
+      let html = "";
+      dataOriginal.forEach((p, idx) => {
+        const ket = String(p.Keterangan||"").toLowerCase();
+        if(ket.includes("meninggal") || ket.includes("pindah") || ket.includes("dihapus")) return;
+        html += `
+          <div class="list-item">
+            <div>
+              <div style="font-weight:600; color:var(--neutral); font-size:15px;">
+                ${idx+1}. ${p.Nama} <span style="font-weight:500; color:var(--muted); font-size:13px;">(${p.Umur ? p.Umur + ' th' : '-'})</span>
+              </div>
+              <div class="text-muted" style="font-size:13px; margin-top:3px;">
+                Hubungan: <strong style="color:var(--neutral-sub);">${p.HubunganKeluarga || '-'}</strong> | Status: ${p.Status || '-'} | JK: ${p.JK || '-'}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      document.getElementById('listAnggotaView').innerHTML = html;
+      
+      if (dataOriginal[0] && (dataOriginal[0].StatusKonfirmasi === 'Sesuai' || dataOriginal[0].StatusKonfirmasi === 'Sudah Direvisi')) {
+        document.getElementById('konfirmasiArea').style.display = 'none';
+        document.getElementById('sudahSesuaiArea').style.display = 'block';
+      }
+    }
+    
+    function submitSesuai() {
+      UI.setLoading('btnSesuai', true, 'Menyimpan Konfirmasi...');
+      API.submitSesuai(auth.userGrupKK, auth.userNama).then(res => {
+        UI.setLoading('btnSesuai', false);
+        if(res.success) {
+          UI.store('statusLaporan', 'sesuai');
+          UI.navigate('sukses');
+        } else {
+          UI.showError(res.message);
+        }
+      }).catch(err => {
+        UI.setLoading('btnSesuai', false);
+        UI.showError(err.message || "Gagal menghubungi server.");
+      });
+    }
+
+    function downloadPdf() {
+      UI.setLoading('btnPdf', true, 'Membuat Dokumen PDF...');
+      API.generatePDF(auth.userGrupKK).then(res => {
+        UI.setLoading('btnPdf', false);
+        if(res.success) {
+          document.getElementById('btnPdf').outerHTML = `<a href="${res.url}" target="_top" class="btn btn-primary" style="margin-top:10px;">Unduh</a>`;
+        } else {
+          UI.showError("Gagal generate PDF: " + res.message);
+        }
+      }).catch(err => {
+        UI.setLoading('btnPdf', false);
+        UI.showError(err.message || "Gagal membuat PDF.");
+      });
+    }
+
+    // --- EDIT MODE LOGIC ---
+    function masukModeEdit() {
+      document.getElementById('cardView').style.display = 'none';
+      document.getElementById('cardEdit').style.display = 'block';
+      renderEditList();
+    }
+
+    function masukModeEditDanTambah() {
+      masukModeEdit();
+      bukaModalTambah();
+    }
+    
+    function batalEdit() {
+      pendingUpdates = [];
+      document.getElementById('cardEdit').style.display = 'none';
+      document.getElementById('cardView').style.display = 'block';
+    }
+
+    function renderEditList() {
+      let html = "";
+      
+      // Merge original with pending updates
+      // First, map original data
+      dataOriginal.forEach((p, idx) => {
+        const ket = String(p.Keterangan||"").toLowerCase();
+        if(ket.includes("meninggal") || ket.includes("pindah") || ket.includes("dihapus")) return;
+        
+        let draft = pendingUpdates.find(u => (u.type === 'update' || u.type === 'delete') && u.rowIndex === p.RowIndex);
+        
+        if (draft && draft.type === 'delete') {
+          html += `
+            <div class="list-item strikethrough">
+              <div>
+                <div style="font-weight:600;">${p.Nama} <span class="badge-draft">DIHAPUS</span></div>
+                <div class="text-muted">Alasan: ${draft.alasan}</div>
+              </div>
+              <button class="btn btn-outline action-btn" onclick="batalDraft(${draft.draftId})">Batal Hapus</button>
+            </div>
+          `;
+        } else {
+          let disp = draft ? draft.data : p;
+          let badge = draft ? '<span class="badge-draft">DIEDIT</span>' : '';
+          html += `
+            <div class="list-item">
+              <div>
+                <div style="font-weight:600;">${disp.Nama} ${badge}</div>
+                <div class="text-muted">Hubungan: ${disp.HubunganKeluarga} | JK: ${disp.JK}</div>
+              </div>
+              <div style="display:flex; gap:5px;">
+                <button class="btn btn-primary action-btn" onclick="bukaModalEdit(${p.RowIndex})">✏️ Edit</button>
+                <button class="btn btn-danger action-btn" onclick="hapusAnggota(${p.RowIndex}, '${p.Nama}')">🗑️ Hapus</button>
+              </div>
+            </div>
+          `;
+        }
+      });
+      
+      // Then, add new members
+      let additions = pendingUpdates.filter(u => u.type === 'add');
+      additions.forEach(add => {
+        html += `
+          <div class="list-item" style="border-left:3px solid #22c55e;">
+            <div>
+              <div style="font-weight:600;">${add.data.Nama} <span class="badge-draft" style="background:#bbf7d0; color:#166534;">BARU</span></div>
+              <div class="text-muted">Hubungan: ${add.data.HubunganKeluarga}</div>
+            </div>
+            <div style="display:flex; gap:5px;">
+              <button class="btn btn-primary action-btn" onclick="bukaModalEditDraft(${add.draftId})">✏️ Edit</button>
+              <button class="btn btn-danger action-btn" onclick="batalDraft(${add.draftId})">❌ Batal</button>
+            </div>
+          </div>
+        `;
+      });
+      
+      document.getElementById('listAnggotaEdit').innerHTML = html;
+    }
+
+    function hapusAnggota(rowIndex, nama) {
+      let alasan = prompt(`Kenapa ${nama} dihapus? (Misal: Meninggal / Pindah)`);
+      if(!alasan) return;
+      
+      // Remove any pending updates for this row
+      pendingUpdates = pendingUpdates.filter(u => u.rowIndex !== rowIndex);
+      
+      pendingUpdates.push({
+        type: 'delete',
+        draftId: draftCounter++,
+        rowIndex: rowIndex,
+        alasan: alasan
+      });
+      renderEditList();
+    }
+    
+    function batalDraft(draftId) {
+      pendingUpdates = pendingUpdates.filter(u => u.draftId !== draftId);
+      renderEditList();
+    }
+    
+    function bukaModalTambah() {
+      document.getElementById('modalTitle').textContent = "Tambah Anggota Baru";
+      document.getElementById('inpRowIdx').value = "";
+      document.getElementById('inpDraftId').value = "";
+      document.getElementById('inpAction').value = "add";
+      
+      document.getElementById('inpNama').value = "";
+      document.getElementById('inpNIK').value = "";
+      document.getElementById('inpJK').value = "";
+      document.getElementById('inpTempat').value = "";
+      document.getElementById('inpTgl').value = "";
+      document.getElementById('inpStatus').value = "";
+      document.getElementById('inpHub').value = "";
+      document.getElementById('inpDis').value = "TIDAK";
+      
+      document.getElementById('modalWarga').style.display = 'flex';
+    }
+    
+    function bukaModalEdit(rowIndex) {
+      document.getElementById('modalTitle').textContent = "Edit Anggota";
+      let original = dataOriginal.find(p => p.RowIndex === rowIndex);
+      let draft = pendingUpdates.find(u => u.type === 'update' && u.rowIndex === rowIndex);
+      let data = draft ? draft.data : original;
+      
+      document.getElementById('inpRowIdx').value = rowIndex;
+      document.getElementById('inpDraftId').value = draft ? draft.draftId : "";
+      document.getElementById('inpAction').value = "update";
+      
+      document.getElementById('inpNama').value = data.Nama || "";
+      document.getElementById('inpNIK').value = data.NIK || "";
+      document.getElementById('inpJK').value = data.JK || "";
+      document.getElementById('inpTempat').value = data.TempatLahir || "";
+      
+      // format date
+      let tgl = data.TglLahir || "";
+      if (typeof tgl === "string" && tgl.includes("T")) tgl = tgl.split("T")[0]; // handle iso date
+      document.getElementById('inpTgl').value = tgl;
+      
+      document.getElementById('inpStatus').value = data.Status || "";
+      document.getElementById('inpHub').value = data.HubunganKeluarga || "";
+      document.getElementById('inpDis').value = data.Disabilitas || "TIDAK";
+      
+      document.getElementById('modalWarga').style.display = 'flex';
+    }
+    
+    function bukaModalEditDraft(draftId) {
+      document.getElementById('modalTitle').textContent = "Edit Anggota Baru";
+      let draft = pendingUpdates.find(u => u.draftId === draftId);
+      let data = draft.data;
+      
+      document.getElementById('inpRowIdx').value = "";
+      document.getElementById('inpDraftId').value = draftId;
+      document.getElementById('inpAction').value = "add";
+      
+      document.getElementById('inpNama').value = data.Nama || "";
+      document.getElementById('inpNIK').value = data.NIK || "";
+      document.getElementById('inpJK').value = data.JK || "";
+      document.getElementById('inpTempat').value = data.TempatLahir || "";
+      document.getElementById('inpTgl').value = data.TglLahir || "";
+      document.getElementById('inpStatus').value = data.Status || "";
+      document.getElementById('inpHub').value = data.HubunganKeluarga || "";
+      document.getElementById('inpDis').value = data.Disabilitas || "TIDAK";
+      
+      document.getElementById('modalWarga').style.display = 'flex';
+    }
+
+    function simpanKeDraft() {
+      let action = document.getElementById('inpAction').value;
+      let rowIndex = parseInt(document.getElementById('inpRowIdx').value) || null;
+      let draftId = parseInt(document.getElementById('inpDraftId').value) || draftCounter++;
+      
+      let newData = {
+        Nama: document.getElementById('inpNama').value,
+        NIK: document.getElementById('inpNIK').value,
+        JK: document.getElementById('inpJK').value,
+        TempatLahir: document.getElementById('inpTempat').value,
+        TglLahir: document.getElementById('inpTgl').value,
+        Status: document.getElementById('inpStatus').value,
+        HubunganKeluarga: document.getElementById('inpHub').value,
+        Disabilitas: document.getElementById('inpDis').value
+      };
+      
+      if(!newData.Nama || !newData.JK || !newData.TglLahir || !newData.Status || !newData.HubunganKeluarga) {
+        alert("Semua kolom bertanda * wajib diisi!");
+        return;
+      }
+      
+      // Hapus draft lama jika ada
+      pendingUpdates = pendingUpdates.filter(u => u.draftId !== draftId && !(u.rowIndex === rowIndex && action === 'update'));
+      
+      pendingUpdates.push({
+        type: action,
+        draftId: draftId,
+        rowIndex: rowIndex,
+        data: newData
+      });
+      
+      document.getElementById('modalWarga').style.display = 'none';
+      renderEditList();
+    }
+    
+    function simpanSemuaPerubahan() {
+      if(pendingUpdates.length === 0) {
+        alert("Tidak ada perubahan untuk disimpan. Silakan edit atau tambah data dulu.");
+        return;
+      }
+      
+      if(!confirm("Apakah Anda yakin perubahannya sudah sesuai? Data KK akan otomatis disahkan setelah disimpan.")) {
+        return;
+      }
+      
+      UI.setLoading('btnSimpanPerubahan', true, 'Menyimpan ke Server...');
+      
+      // format payload
+      const payload = pendingUpdates.map(u => ({
+        action: u.type,
+        rowIndex: u.rowIndex,
+        data: u.data,
+        alasan: u.alasan
+      }));
+      
+      API.wargaUpdateKeluarga(auth.userGrupKK, payload, auth.userNama).then(res => {
+        UI.setLoading('btnSimpanPerubahan', false);
+        if(res.success) {
+          UI.store('statusLaporan', 'sesuai');
+          UI.navigate('sukses');
+        } else {
+          const errEl = document.getElementById('editAlert');
+          errEl.innerText = res.message;
+          errEl.style.display = 'block';
+        }
+      }).catch(err => {
+        UI.setLoading('btnSimpanPerubahan', false);
+        const errEl = document.getElementById('editAlert');
+        errEl.innerText = err.message || "Gagal menghubungi server.";
+        errEl.style.display = 'block';
+      });
+    }
+  </script>
+</body>
+</html>

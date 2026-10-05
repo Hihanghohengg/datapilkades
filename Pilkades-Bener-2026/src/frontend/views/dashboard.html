@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Pantarlih - Pilkades Bener 2026</title>
+  <?!= include('frontend/styles/main'); ?>
+  <?!= include('frontend/styles/admin'); ?>
+  <style>
+    .view-section { display: none; }
+    .view-section.active { display: block; animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+    
+    .stat-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-xs);
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card:hover {
+      box-shadow: var(--shadow-sm);
+      border-color: var(--primary-border);
+    }
+    .stat-card .stat-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .stat-card .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--neutral);
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+    
+    .tab-header { 
+      display: flex; 
+      gap: 12px; 
+      margin-bottom: 20px; 
+      border-bottom: 1.5px solid var(--border); 
+      padding-bottom: 0px; 
+      overflow-x: auto;
+    }
+    .tab-btn { 
+      padding: 10px 18px; 
+      border: none; 
+      background: transparent; 
+      font-weight: 600; 
+      font-size: 14px;
+      color: var(--muted); 
+      cursor: pointer; 
+      border-bottom: 2.5px solid transparent; 
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--primary); }
+    .tab-btn.active { 
+      color: var(--primary); 
+      border-bottom-color: var(--primary); 
+    }
+    .tab-counter {
+      background: #f1f5f9;
+      color: #475569;
+      font-size: 11.5px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+    .tab-btn.active .tab-counter {
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body class="admin-layout">
+  
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div style="width:28px; height:28px; border-radius:6px; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;">
+        P
+      </div>
+      <span>Pilkades Bener 2026</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="#" onclick="switchAdminView('dashboard'); return false;" class="nav-item" id="nav-dashboard">📊 Dashboard</a>
+      <a href="#" onclick="switchAdminView('monitoring'); return false;" class="nav-item" id="nav-monitoring">📋 Monitoring</a>
+      <a href="#" onclick="switchAdminView('database'); return false;" class="nav-item" id="nav-database">👥 Database</a>
+      <a href="#" onclick="switchAdminView('generate_pdf'); return false;" class="nav-item" id="nav-generate_pdf">📄 Cetak PDF</a>
+      
+      <div style="margin-top:auto; padding-top:16px; border-top:1px solid var(--border);">
+        <a href="#" onclick="adminLogout(); return false;" class="nav-item" style="color:var(--danger); border-left:none;">
+          🚪 Keluar
+        </a>
+      </div>
+    </nav>
+  </aside>
+  
+  <div class="main-content">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="menu-toggle" id="menuToggle">☰</button>
+        <span style="font-weight:600; font-size:15px; color:var(--neutral);" id="topbar-title">Dashboard</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:16px;">
+        <span class="badge badge-direvisi">Admin Aktif</span>
+        <?!= include('frontend/partials/notif_icon'); ?>
+      </div>
+    </div>
+    
+    <!-- SECTION 1: DASHBOARD (STATISTIK) -->
+    <div id="view-dashboard" class="content-wrapper view-section active">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 24px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h1 style="font-size:22px; margin-bottom:4px;">Statistik Pilkades</h1>
+          <p class="text-muted" style="margin:0;">Ringkasan pemilih dan progres verifikasi warga Desa Bener.</p>
+        </div>
+        <button class="btn btn-outline" onclick="initDashboard()" style="width:auto; min-height:36px; padding:6px 14px; font-size:13px;">
+          Refresh
+        </button>
+      </div>
+      
+      <div id="loading-dashboard" class="text-center" style="padding:40px; color:var(--muted);">
+        <div class="spinner spinner-blue" style="margin-bottom:10px;"></div>
+        <div>Memuat statistik...</div>
+      </div>
+      
+      <div id="content-dashboard" style="display:none;">
+        <div class="grid-2 mb-4" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+          <div class="stat-card" style="border-top:3px solid var(--primary);">
+            <div class="stat-label">Total Kepala Keluarga</div>
+            <div class="stat-value" id="stTotalKK">0</div>
+            <div class="text-muted" style="font-size:12px; margin-top:4px;">Kartu Keluarga terdata</div>
+          </div>
+          <div class="stat-card" style="border-top:3px solid #3b82f6;">
+            <div class="stat-label">Total Pemilih</div>
+            <div class="stat-value" id="stTotalWarga">0</div>
+            <div class="text-muted" style="font-size:12px; margin-top:4px;">Seluruh warga terdaftar</div>
+          </div>
+          <div class="stat-card" style="border-top:3px solid var(--success);">
+            <div class="stat-label" style="color:var(--success);">Sudah Mengisi</div>
+            <div class="stat-value" style="color:var(--success);" id="stSudah">0</div>
+            <div class="text-muted" style="font-size:12px; margin-top:4px;">KK telah terverifikasi</div>
+          </div>
+          <div class="stat-card" style="border-top:3px solid var(--danger);">
+            <div class="stat-label" style="color:var(--danger);">Belum Mengisi</div>
+            <div class="stat-value" style="color:var(--danger);" id="stBelum">0</div>
+            <div class="text-muted" style="font-size:12px; margin-top:4px;">KK belum konfirmasi</div>
+          </div>
+        </div>
+
+        <!-- Progres Bar Card -->
+        <div class="stat-card mb-4" style="padding:18px 24px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <span style="font-weight:600; font-size:14px; color:var(--neutral);">Progres Pengisian Data KK</span>
+            <span style="font-weight:700; font-size:16px; color:var(--primary);" id="stPersen">0%</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="stProgressFill" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <h2 style="font-size:16px; margin:28px 0 16px 0;">Menu Cepat</h2>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:16px;">
+          <a href="#" onclick="switchAdminView('monitoring'); return false;" class="stat-card clickable-card" style="text-decoration:none; display:flex; align-items:center; gap:14px;">
+            <div style="width:40px; height:40px; border-radius:8px; background:var(--primary-light); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:18px;">
+              📋
+            </div>
+            <div>
+              <div style="font-weight:600; font-size:14.5px; color:var(--neutral);">Monitoring KK</div>
+              <div class="text-muted" style="font-size:12.5px;">Cek siapa sudah dan belum</div>
+            </div>
+          </a>
+
+          <a href="#" onclick="switchAdminView('database'); return false;" class="stat-card clickable-card" style="text-decoration:none; display:flex; align-items:center; gap:14px;">
+            <div style="width:40px; height:40px; border-radius:8px; background:#eff6ff; color:#1e40af; display:flex; align-items:center; justify-content:center; font-size:18px;">
+              👥
+            </div>
+            <div>
+              <div style="font-weight:600; font-size:14.5px; color:var(--neutral);">Database Warga</div>
+              <div class="text-muted" style="font-size:12.5px;">Cek detail 384 data pemilih</div>
+            </div>
+          </a>
+          
+          <a href="#" onclick="switchAdminView('generate_pdf'); return false;" class="stat-card clickable-card" style="text-decoration:none; display:flex; align-items:center; gap:14px;">
+            <div style="width:40px; height:40px; border-radius:8px; background:#eff6ff; color:#1d4ed8; display:flex; align-items:center; justify-content:center; font-size:18px;">
+              📄
+            </div>
+            <div>
+              <div style="font-weight:600; font-size:14.5px; color:var(--neutral);">Cetak PDF</div>
+              <div class="text-muted" style="font-size:12.5px;">Berkas tanda bukti pemilih</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- SECTION 2: MONITORING KK (SIAPA SUDAH & BELUM) -->
+    <div id="view-monitoring" class="content-wrapper view-section">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 20px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h1 style="font-size:22px; margin-bottom:4px;">Monitoring KK</h1>
+          <p class="text-muted" style="margin:0;">Daftar keluarga pemilih untuk memeriksa siapa yang sudah dan belum mengisi.</p>
+        </div>
+        <button class="btn btn-outline" onclick="initMonitoring()" style="width:auto; min-height:36px; padding:6px 14px; font-size:13px;">
+          Refresh
+        </button>
+      </div>
+      
+      <div style="margin-bottom: 16px;">
+        <input type="text" id="searchMonitoring" placeholder="Cari nama kepala keluarga, No. KK, atau RT..." oninput="filterMonitoring(this.value)" style="margin-bottom:0; max-width:380px;" autocomplete="off">
+      </div>
+
+      <div class="tab-header">
+        <button class="tab-btn active" id="tabSemua" onclick="switchMonitoringTab('semua')">
+          <span>Semua</span>
+          <span class="tab-counter" id="cntSemua">0</span>
+        </button>
+        <button class="tab-btn" id="tabBelum" onclick="switchMonitoringTab('belum')">
+          <span>Belum Isi</span>
+          <span class="tab-counter" id="cntBelum">0</span>
+        </button>
+        <button class="tab-btn" id="tabSudah" onclick="switchMonitoringTab('sudah')">
+          <span>Sudah Isi</span>
+          <span class="tab-counter" id="cntSudah">0</span>
+        </button>
+      </div>
+      
+      <div id="loading-monitoring" class="text-center" style="padding:40px; color:var(--muted);">
+        <div class="spinner spinner-blue" style="margin-bottom:10px;"></div>
+        <div>Memuat data monitoring...</div>
+      </div>
+      
+      <div class="table-wrapper" id="tableContainer-monitoring" style="display:none; max-height:calc(100vh - 270px); overflow-y:auto;">
+        <table id="tblMonitoring">
+          <thead style="position:sticky; top:0; z-index:5;">
+            <tr>
+              <th style="width:50px;">No</th>
+              <th>Nama Kepala Keluarga</th>
+              <th>Nomor Grup / No. KK</th>
+              <th>Wilayah</th>
+              <th style="text-align:center;">Anggota</th>
+              <th style="text-align:center;">Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECTION 3: DATABASE (ALL 384 RECORDS) -->
+    <div id="view-database" class="content-wrapper view-section">
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 20px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h1 style="font-size:22px; margin-bottom:4px;">Database Warga</h1>
+          <p class="text-muted" style="margin:0;">Seluruh data pemilih terdaftar (384 data).</p>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="badge badge-direvisi" id="dbTotalBadge" style="font-size:12.5px; padding:6px 12px;">0 Warga</span>
+          <button class="btn btn-outline" onclick="initDatabase()" style="width:auto; min-height:36px; padding:6px 14px; font-size:13px;">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <input type="text" id="searchDatabase" placeholder="Cari nama, NIK, alamat, RT/RW..." oninput="filterDatabase(this.value)" style="margin-bottom:0; max-width:380px;" autocomplete="off">
+      </div>
+      
+      <div id="loading-database" class="text-center" style="padding:40px; color:var(--muted);">
+        <div class="spinner spinner-blue" style="margin-bottom:10px;"></div>
+        <div>Memuat seluruh data pemilih...</div>
+      </div>
+      
+      <div class="table-wrapper" id="tableContainer-database" style="display:none; max-height:calc(100vh - 250px); overflow-y:auto;">
+        <table id="tblDatabase">
+          <thead style="position:sticky; top:0; z-index:5;">
+            <tr>
+              <th style="width:50px;">No</th>
+              <th>Nama Lengkap</th>
+              <th>NIK</th>
+              <th>JK</th>
+              <th>Umur</th>
+              <th>Tgl Lahir</th>
+              <th>Hubungan</th>
+              <th>Alamat</th>
+              <th>RT / RW</th>
+              <th>No. KK</th>
+              <th style="text-align:center;">Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECTION 4: GENERATE PDF -->
+    <div id="view-generate_pdf" class="content-wrapper view-section">
+      <div style="margin-bottom: 20px;">
+        <a href="#" onclick="switchAdminView('dashboard'); return false;" style="text-decoration:none; color:var(--primary); font-weight:600; font-size:13.5px; display:inline-flex; align-items:center; gap:6px;">
+          ← Kembali ke Dashboard
+        </a>
+      </div>
+      
+      <h1 style="font-size:22px; margin-bottom:4px;">Cetak Dokumen PDF KK</h1>
+      <p class="text-muted mb-4">Cetak formulir tanda bukti pencocokan data per keluarga.</p>
+      
+      <div class="card" style="max-width:560px;">
+        <label for="inpGrupKK">Nomor Kartu Keluarga (Grup KK)</label>
+        <div style="display:flex; gap:10px; margin-bottom: 16px;">
+          <input type="text" id="inpGrupKK" placeholder="Contoh: 330605..." autocomplete="off" style="margin-bottom:0;">
+          <button class="btn btn-primary" id="btnGen" onclick="generate()" style="white-space: nowrap; width:auto; padding:0 24px;">
+            Cari
+          </button>
+        </div>
+        
+        <div id="resultArea" style="display:none; padding: 20px; background: var(--primary-light); border:1px solid var(--primary-border); border-radius: var(--radius-sm); text-align:center;">
+          <h3 class="mb-2" style="color:var(--primary);">Dokumen PDF Siap</h3>
+          <p class="text-muted" style="font-size:13px; margin-bottom:12px;">File PDF telah berhasil dibuat di Google Drive.</p>
+          <div id="linkArea"></div>
+        </div>
+        
+        <div id="errorAlert" class="alert alert-error" style="display:none; margin-top: 16px;"></div>
+      </div>
+    </div>
+
+  </div> <!-- End of main-content -->
+
+  <?!= include('frontend/scripts/api_js'); ?>
+  <?!= include('frontend/scripts/ui_js'); ?>
+  <?!= include('frontend/scripts/admin_js'); ?>
+  
+  <script>
+    sessionStorage.setItem('SCRIPT_URL', '<?= scriptUrl ?>');
+
+    // ========================================
+    // GLOBAL STATE
+    // ========================================
+    const globalAdminToken = UI.getStore('adminToken');
+    let kkList = [];
+    let currentMonitoringTab = 'semua';
+    let allWargaList = [];
+
+    // Redirect to login if no token
+    if (!globalAdminToken) {
+      window.top.location.href = '<?= scriptUrl ?>?page=admin-login';
+    }
+
+    // ========================================
+    // SPA ROUTER
+    // ========================================
+    function switchAdminView(viewId) {
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+      const viewEl = document.getElementById('view-' + viewId);
+      if (viewEl) viewEl.classList.add('active');
+
+      const navEl = document.getElementById('nav-' + viewId);
+      if (navEl) navEl.classList.add('active');
+
+      const titles = {
+        'dashboard': 'Dashboard',
+        'monitoring': 'Monitoring KK',
+        'database': 'Database Warga (384 Data)',
+        'generate_pdf': 'Cetak PDF'
+      };
+      const titleEl = document.getElementById('topbar-title');
+      if (titleEl && titles[viewId]) titleEl.textContent = titles[viewId];
+
+      if (viewId === 'dashboard') initDashboard();
+      if (viewId === 'monitoring') initMonitoring();
+      if (viewId === 'database') initDatabase();
+
+      const sb = document.getElementById('sidebar');
+      if (sb && sb.classList.contains('open')) sb.classList.remove('open');
+    }
+
+    // ========================================
+    // DASHBOARD STATS
+    // ========================================
+    function initDashboard() {
+      if (!globalAdminToken) return;
+      document.getElementById('loading-dashboard').style.display = 'block';
+      document.getElementById('content-dashboard').style.display = 'none';
+
+      API.getDashboardStats(globalAdminToken).then(res => {
+        document.getElementById('loading-dashboard').style.display = 'none';
+        if (res) {
+          document.getElementById('content-dashboard').style.display = 'block';
+          document.getElementById('stTotalKK').textContent = res.totalKK || 0;
+          document.getElementById('stTotalWarga').textContent = res.totalWarga || 0;
+          document.getElementById('stSudah').textContent = res.sudah || 0;
+          document.getElementById('stBelum').textContent = res.belum || 0;
+          
+          let pct = res.persen !== undefined ? res.persen : (res.totalKK > 0 ? Math.round((res.sudah / res.totalKK) * 100) : 0);
+          document.getElementById('stPersen').textContent = pct + '%';
+          document.getElementById('stProgressFill').style.width = pct + '%';
+        } else {
+          document.getElementById('loading-dashboard').innerHTML = '<span class="text-danger">Gagal memuat data statistik.</span>';
+        }
+      }).catch(e => {
+        document.getElementById('loading-dashboard').innerHTML = '<span class="text-danger">Error: ' + (e.message || 'Koneksi gagal') + '</span>';
+      });
+    }
+
+    // ========================================
+    // MONITORING KK
+    // ========================================
+    function initMonitoring() {
+      if (!globalAdminToken) return;
+      document.getElementById('loading-monitoring').style.display = 'block';
+      document.getElementById('tableContainer-monitoring').style.display = 'none';
+      
+      API.getDashboardStats(globalAdminToken).then(res => {
+        document.getElementById('loading-monitoring').style.display = 'none';
+        if (res) {
+          document.getElementById('tableContainer-monitoring').style.display = 'block';
+          kkList = res.list || [];
+          
+          let belumCount = kkList.filter(kk => kk.Status !== 'Sudah').length;
+          let sudahCount = kkList.filter(kk => kk.Status === 'Sudah').length;
+          
+          document.getElementById('cntSemua').textContent = kkList.length;
+          document.getElementById('cntBelum').textContent = belumCount;
+          document.getElementById('cntSudah').textContent = sudahCount;
+          
+          renderMonitoringTable();
+        }
+      }).catch(e => {
+        document.getElementById('loading-monitoring').innerHTML = '<span class="text-danger">Error: ' + (e.message || 'Koneksi gagal') + '</span>';
+      });
+    }
+
+    function switchMonitoringTab(tab) {
+      currentMonitoringTab = tab;
+      document.querySelectorAll('.tab-header .tab-btn').forEach(btn => btn.classList.remove('active'));
+      if (tab === 'semua') document.getElementById('tabSemua').classList.add('active');
+      if (tab === 'belum') document.getElementById('tabBelum').classList.add('active');
+      if (tab === 'sudah') document.getElementById('tabSudah').classList.add('active');
+      renderMonitoringTable();
+    }
+
+    function filterMonitoring() {
+      renderMonitoringTable();
+    }
+
+    function renderMonitoringTable() {
+      const q = (document.getElementById('searchMonitoring').value || "").toLowerCase().trim();
+      const tbody = document.querySelector('#tblMonitoring tbody');
+      tbody.innerHTML = '';
+
+      let list = kkList.filter(kk => {
+        let matchTab = true;
+        if (currentMonitoringTab === 'belum') matchTab = (kk.Status !== 'Sudah');
+        else if (currentMonitoringTab === 'sudah') matchTab = (kk.Status === 'Sudah');
+
+        if (!matchTab) return false;
+        if (!q) return true;
+
+        return (kk.NamaKepala && kk.NamaKepala.toLowerCase().includes(q)) ||
+               (kk.GrupKK && String(kk.GrupKK).toLowerCase().includes(q)) ||
+               (kk.Alamat && kk.Alamat.toLowerCase().includes(q)) ||
+               (kk.RT && String(kk.RT).toLowerCase().includes(q));
+      });
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted" style="padding:32px;">Tidak ada data keluarga yang ditemukan.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      list.forEach((kk, idx) => {
+        let isSudah = (kk.Status === 'Sudah');
+        let badgeHtml = isSudah
+          ? '<span class="badge badge-sesuai">Sudah Isi</span>'
+          : '<span class="badge badge-baru">Belum Isi</span>';
+
+        let wilayah = '';
+        if (kk.RT || kk.RW) {
+          wilayah = 'RT ' + (kk.RT || '-') + ' / RW ' + (kk.RW || '-');
+        } else if (kk.Alamat) {
+          wilayah = kk.Alamat;
+        } else {
+          wilayah = '-';
+        }
+
+        html += '<tr>' +
+          '<td>' + (idx + 1) + '</td>' +
+          '<td><div style="font-weight:600; color:var(--neutral);">' + (kk.NamaKepala || "-") + '</div></td>' +
+          '<td><span style="font-family:monospace; font-size:13px; color:var(--muted);">' + kk.GrupKK + '</span></td>' +
+          '<td><span style="font-size:12.5px; color:var(--muted);">' + wilayah + '</span></td>' +
+          '<td style="text-align:center;"><span style="font-weight:600; font-size:13px;">' + (kk.JumlahPemilih || 1) + ' Jiwa</span></td>' +
+          '<td style="text-align:center;">' + badgeHtml + '</td>' +
+          '</tr>';
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    // ========================================
+    // DATABASE (384 WARGA)
+    // ========================================
+    function initDatabase() {
+      if (!globalAdminToken) return;
+      document.getElementById('loading-database').style.display = 'block';
+      document.getElementById('tableContainer-database').style.display = 'none';
+
+      API.getAllWarga(globalAdminToken).then(res => {
+        document.getElementById('loading-database').style.display = 'none';
+        if (res && res.success) {
+          allWargaList = res.data || [];
+          document.getElementById('tableContainer-database').style.display = 'block';
+          document.getElementById('dbTotalBadge').textContent = allWargaList.length + ' Warga';
+          renderDatabaseTable(allWargaList);
+        } else {
+          document.getElementById('loading-database').innerHTML = '<span class="text-danger">' + (res.message || 'Gagal memuat database.') + '</span>';
+        }
+      }).catch(e => {
+        document.getElementById('loading-database').innerHTML = '<span class="text-danger">Error: ' + (e.message || 'Koneksi gagal') + '</span>';
+      });
+    }
+
+    function filterDatabase(keyword) {
+      const q = String(keyword || "").toLowerCase().trim();
+      if (!q) {
+        renderDatabaseTable(allWargaList);
+        document.getElementById('dbTotalBadge').textContent = allWargaList.length + ' Warga';
+        return;
+      }
+
+      const filtered = allWargaList.filter(w => {
+        return (w.Nama && w.Nama.toLowerCase().includes(q)) ||
+               (w.NIK && w.NIK.toLowerCase().includes(q)) ||
+               (w.Alamat && w.Alamat.toLowerCase().includes(q)) ||
+               (w.RT && String(w.RT).toLowerCase().includes(q)) ||
+               (w.RW && String(w.RW).toLowerCase().includes(q)) ||
+               (w.HubunganKeluarga && w.HubunganKeluarga.toLowerCase().includes(q)) ||
+               (w.GrupKK && String(w.GrupKK).toLowerCase().includes(q));
+      });
+
+      document.getElementById('dbTotalBadge').textContent = filtered.length + ' / ' + allWargaList.length + ' Warga';
+      renderDatabaseTable(filtered);
+    }
+
+    function renderDatabaseTable(data) {
+      const tbody = document.querySelector('#tblDatabase tbody');
+      tbody.innerHTML = '';
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="text-center text-muted" style="padding:32px;">Tidak ada data yang cocok dengan pencarian.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      data.forEach((w, i) => {
+        let isSudah = (w.StatusKonfirmasi === 'Sudah');
+        let badgeHtml = isSudah
+          ? '<span class="badge badge-sesuai">Sudah</span>'
+          : '<span class="badge badge-baru">Belum</span>';
+
+        html += '<tr>' +
+          '<td>' + (i + 1) + '</td>' +
+          '<td><div style="font-weight:600; color:var(--neutral);">' + (w.Nama || '-') + '</div></td>' +
+          '<td><span style="font-family:monospace; font-size:12.5px; color:var(--muted);">' + (w.NIK || '-') + '</span></td>' +
+          '<td>' + (w.JK || '-') + '</td>' +
+          '<td>' + (w.Umur || '-') + '</td>' +
+          '<td>' + (w.TglLahir || '-') + '</td>' +
+          '<td>' + (w.HubunganKeluarga || '-') + '</td>' +
+          '<td>' + (w.Alamat || '-') + '</td>' +
+          '<td>RT ' + (w.RT || '-') + ' / RW ' + (w.RW || '-') + '</td>' +
+          '<td><span style="font-family:monospace; font-size:12.5px; color:var(--muted);">' + (w.GrupKK || '-') + '</span></td>' +
+          '<td style="text-align:center;">' + badgeHtml + '</td>' +
+          '</tr>';
+      });
+      tbody.innerHTML = html;
+    }
+
+    // ========================================
+    // GENERATE PDF
+    // ========================================
+    function generate() {
+      const grupKK = document.getElementById('inpGrupKK').value.trim();
+      if (!grupKK) {
+        UI.showError("Masukkan nomor Grup KK terlebih dahulu.");
+        return;
+      }
+
+      UI.setLoading('btnGen', true, 'Cari...');
+      document.getElementById('resultArea').style.display = 'none';
+
+      API.generatePDF(grupKK, globalAdminToken).then(res => {
+        UI.setLoading('btnGen', false);
+        if (res.success) {
+          document.getElementById('resultArea').style.display = 'block';
+          document.getElementById('linkArea').innerHTML = '<a href="' + res.url + '" target="_top" class="btn btn-primary mt-2">Unduh</a>';
+        } else {
+          UI.showError(res.message);
+        }
+      }).catch(e => {
+        UI.setLoading('btnGen', false);
+        UI.showError(e.message || "Gagal menghubungi server.");
+      });
+    }
+
+    // ========================================
+    // INIT ON PAGE LOAD
+    // ========================================
+    window.onload = function () {
+      switchAdminView('dashboard');
+      const toggle = document.getElementById('menuToggle');
+      if (toggle) {
+        toggle.onclick = function () {
+          document.getElementById('sidebar').classList.toggle('open');
+        };
+      }
+    };
+  </script>
+</body>
+</html>

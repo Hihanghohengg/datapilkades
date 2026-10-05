@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Konfirmasi Berhasil - Pilkades Bener 2026</title>
+  <?!= include('frontend/styles/main'); ?>
+</head>
+<body>
+  <div class="container" style="margin-top: 40px;">
+    <div class="header-logo" style="margin-bottom: 20px;">
+      <div class="brand-badge">PILKADES BENER 2026</div>
+    </div>
+
+    <div class="card text-center" style="padding: 44px 24px;">
+      <div style="width: 72px; height: 72px; background: #ecfdf5; border: 2px solid #a7f3d0; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 32px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);">
+        ✅
+      </div>
+      
+      <h1 style="font-size: 24px; margin-bottom: 8px;">Konfirmasi Berhasil!</h1>
+      
+      <p id="msgSukses" class="text-muted mb-4" style="font-size: 15px; line-height: 1.6; max-width: 440px; margin-left: auto; margin-right: auto;">
+        Data keluarga Anda telah berhasil dikonfirmasi dan tersimpan di sistem.
+      </p>
+
+      <div id="errorAlert" class="alert alert-error"></div>
+      
+      <div id="pdfArea" style="display:none; margin-bottom: 20px;">
+        <button class="btn btn-primary" id="btnPdf" onclick="downloadPdf()">
+          Unduh
+        </button>
+      </div>
+      
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);">
+        <a href="<?= scriptUrl ?>?page=login" target="_top" class="btn btn-outline" onclick="UI.clearStore();" style="display:inline-flex; width:auto; padding:10px 24px;">
+          Keluar
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <?!= include('frontend/scripts/api_js'); ?>
+  <?!= include('frontend/scripts/ui_js'); ?>
+  <script>
+    sessionStorage.setItem('SCRIPT_URL', '<?= scriptUrl ?>');
+
+    if (!UI.getStore('wargaAuth')) {
+      UI.navigate('login');
+    } else {
+      const stat = UI.getStore('statusLaporan');
+      if(stat === 'sesuai') {
+        document.getElementById('msgSukses').innerHTML = "Data keluarga Anda telah berstatus <strong>SESUAI</strong>.<br>Silakan unduh dokumen tanda bukti konfirmasi di bawah ini:";
+        document.getElementById('pdfArea').style.display = 'block';
+      } else {
+        document.getElementById('msgSukses').innerHTML = "Pembaruan data keluarga Anda telah berhasil disimpan dan terverifikasi.";
+        document.getElementById('pdfArea').style.display = 'block';
+      }
+    }
+    
+    function downloadPdf() {
+      UI.setLoading('btnPdf', true, 'Memproses PDF...');
+      const auth = UI.getStore('wargaAuth');
+      API.generatePDF(auth.userGrupKK).then(res => {
+        UI.setLoading('btnPdf', false);
+        if(res.success) {
+          document.getElementById('btnPdf').outerHTML = `<a href="${res.url}" target="_top" class="btn btn-primary" style="margin-top:8px;">Unduh</a>`;
+        } else {
+          UI.showError("Gagal generate PDF: " + (res.message || ""));
+        }
+      }).catch(err => {
+        UI.setLoading('btnPdf', false);
+        UI.showError(err.message || "Gagal menghubungi server.");
+      });
+    }
+  </script>
+</body>
+</html>

@@ -55,8 +55,10 @@ function loginWarga(nama, tglLahir) {
         if (sim > maxSimilarity) {
           maxSimilarity = sim;
           matchedUser = {
+            rowIndex: i + 2,
             nama: dbNama,
-            grupKK: row[idxGrupKK],
+            nik: row[idxNIK] ? String(row[idxNIK]).trim() : "",
+            grupKK: row[idxGrupKK] !== undefined && row[idxGrupKK] !== null ? String(row[idxGrupKK]).trim() : "",
             alamat: row[idxAlamat] || "",
             rt: row[idxRT] || "",
             rw: row[idxRW] || ""
@@ -66,32 +68,110 @@ function loginWarga(nama, tglLahir) {
     }
     
     if (matchedUser) {
-      // Clear rate limit removed
-      
+      // Check if user has an existing valid GrupKK
+      const rawGrup = matchedUser.grupKK;
+      const isSendiri = (!rawGrup || rawGrup === "" || rawGrup === "-" || rawGrup === "0" || rawGrup.toLowerCase() === "null" || rawGrup.toLowerCase() === "undefined");
+
+      // If user has no GrupKK, assign their NIK or unique KK identifier
+      let effectiveGrupKK = isSendiri ? (matchedUser.nik || ("KK-" + matchedUser.rowIndex)) : matchedUser.grupKK;
+      matchedUser.grupKK = effectiveGrupKK;
+
       const token = Utilities.getUuid();
       const cache = CacheService.getScriptCache();
       const sessionData = JSON.stringify({
-        grupKK: matchedUser.grupKK,
+        grupKK: effectiveGrupKK,
         nama: matchedUser.nama,
+        nik: matchedUser.nik,
+        rowIndex: matchedUser.rowIndex,
+        isSendiri: isSendiri,
         alamat: matchedUser.alamat,
         rt: matchedUser.rt,
         rw: matchedUser.rw
       });
       cache.put("WARGA_SESSION_" + token, sessionData, 3600); // 1 hour session
       
-      logAkses("warga", sName, "Login Sukses", matchedUser.grupKK);
+      // Extract keluarga data
+      let keluargaData = [];
+      let kepala = "";
+
+      if (isSendiri) {
+        // CRITICAL FIX: If user is not yet grouped, their family ONLY contains themselves!
+        let userRow = data[matchedUser.rowIndex - 2];
+        let obj = {};
+        headers.forEach((h, colIdx) => {
+          let val = userRow[colIdx];
+          if (h === "TglLahir" && val instanceof Date) {
+            let d = val.getDate();
+            let m = val.getMonth() + 1;
+            let y = val.getFullYear();
+            val = (d < 10 ? '0' + d : d) + '-' + (m < 10 ? '0' + m : m) + '-' + y;
+          }
+          obj[h] = val !== undefined && val !== null ? val : "";
+        });
+        obj.RowIndex = matchedUser.rowIndex;
+        obj.GrupKK = effectiveGrupKK;
+        if (!obj.KepalaKeluarga) obj.KepalaKeluarga = matchedUser.nama;
+        if (!obj.HubunganKeluarga) obj.HubunganKeluarga = "KEPALA KELUARGA";
+        keluargaData.push(obj);
+        kepala = matchedUser.nama;
+      } else {
+        // Grouped user: Only find rows that match this specific NON-EMPTY grupKK
+        for (let k = 0; k < data.length; k++) {
+          let r = data[k];
+          let rGrup = String(r[idxGrupKK] || "").trim();
+          if (rGrup !== "" && rGrup === effectiveGrupKK) {
+            let obj = {};
+            headers.forEach((h, colIdx) => {
+              let val = r[colIdx];
+              if (h === "TglLahir" && val instanceof Date) {
+                let d = val.getDate();
+                let m = val.getMonth() + 1;
+                let y = val.getFullYear();
+                val = (d < 10 ? '0' + d : d) + '-' + (m < 10 ? '0' + m : m) + '-' + y;
+              }
+              obj[h] = val !== undefined && val !== null ? val : "";
+            });
+            obj.RowIndex = k + 2;
+            keluargaData.push(obj);
+            if (obj.KepalaKeluarga && !kepala) kepala = obj.KepalaKeluarga;
+          }
+        }
+
+        // Safety fallback: if no other rows found, include at least the user's own row
+        if (keluargaData.length === 0) {
+          let userRow = data[matchedUser.rowIndex - 2];
+          let obj = {};
+          headers.forEach((h, colIdx) => {
+            let val = userRow[colIdx];
+            if (h === "TglLahir" && val instanceof Date) {
+              let d = val.getDate();
+              let m = val.getMonth() + 1;
+              let y = val.getFullYear();
+              val = (d < 10 ? '0' + d : d) + '-' + (m < 10 ? '0' + m : m) + '-' + y;
+            }
+            obj[h] = val !== undefined && val !== null ? val : "";
+          });
+          obj.RowIndex = matchedUser.rowIndex;
+          keluargaData.push(obj);
+        }
+      }
+
+      if (!kepala && keluargaData.length > 0) {
+        kepala = keluargaData[0].KepalaKeluarga || keluargaData[0].Nama || "";
+      }
+
       return { 
         success: true, 
         token: token, 
-        grupKK: matchedUser.grupKK, 
+        grupKK: effectiveGrupKK, 
         nama: matchedUser.nama,
         alamat: matchedUser.alamat,
         rt: matchedUser.rt,
-        rw: matchedUser.rw
+        rw: matchedUser.rw,
+        keluargaData: keluargaData,
+        kepala: kepala
       };
     } else {
-      recordFailedLogin("WARGA", sName);
-      logAkses("warga", sName, "Login Gagal", "-");
       return { success: false, message: "Data tidak ditemukan. Pastikan Nama dan Tanggal Lahir sesuai." };
     }
   } catch (e) {
@@ -120,6 +200,21 @@ function verifyWargaToken(token, expectedGrupKK) {
 }
 
 /**
+ * Get Warga Session Object
+ */
+function getWargaSession(token) {
+  if (!token) return null;
+  const cache = CacheService.getScriptCache();
+  const sessionStr = cache.get("WARGA_SESSION_" + token);
+  if (!sessionStr) return null;
+  try {
+    return JSON.parse(sessionStr);
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
  * Validates Admin login
  * @param {string} password 
  */
@@ -134,10 +229,8 @@ function loginAdmin(password) {
       const sessionHours = parseInt(getProperty("ADMIN_SESSION_HOURS") || "2", 10);
       cache.put(CONFIG.ADMIN_SESSION_CACHE_PREFIX + token, "VALID", sessionHours * 3600);
       
-      logAkses("admin", "Admin", "Login Sukses", "-");
       return { success: true, token: token };
     } else {
-      logAkses("admin", "Admin", "Login Gagal", "-");
       return { success: false, message: "Password salah." };
     }
   } catch (e) {
