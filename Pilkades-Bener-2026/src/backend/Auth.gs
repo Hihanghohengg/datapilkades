@@ -21,6 +21,7 @@ function loginWarga(nama, tglLahir) {
     const headers = db[0];
     const data = db.slice(1);
     
+    const idxNIK = headers.indexOf("NIK");
     const idxNama = headers.indexOf("Nama");
     const idxTgl = headers.indexOf("TglLahir");
     const idxGrupKK = headers.indexOf("GrupKK");
@@ -57,7 +58,7 @@ function loginWarga(nama, tglLahir) {
           matchedUser = {
             rowIndex: i + 2,
             nama: dbNama,
-            nik: row[idxNIK] ? String(row[idxNIK]).trim() : "",
+            nik: (idxNIK > -1 && row[idxNIK]) ? String(row[idxNIK]).trim() : "",
             grupKK: row[idxGrupKK] !== undefined && row[idxGrupKK] !== null ? String(row[idxGrupKK]).trim() : "",
             alamat: row[idxAlamat] || "",
             rt: row[idxRT] || "",
